@@ -4,9 +4,9 @@ import '../models/products_model.dart';
 class ProductService {
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: "http://10.0.2.2:3000/api_v1/products", 
+      baseUrl: "http://192.168.1.7:3000/api_v1/products", 
       // ⚠️ Usa 10.0.2.2 en emulador Android, tu IP LAN en dispositivo real
-      connectTimeout: const Duration(seconds: 10),
+      connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 10),
       headers: {"Content-Type": "application/json"},
     ),
