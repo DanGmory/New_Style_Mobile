@@ -5,6 +5,7 @@ import '../../widgets/navigation_bottom.dart';
 import '../user/user.dart';
 import '../auth/change_password.dart';
 import '../auth/login.dart';
+import '../products/products.dart'; 
 
 class HomeScreen extends StatefulWidget {
   final String username;
@@ -31,7 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _pages = [
-      HomeContent(username: widget.username),
+      const ProductScreen(),
       UserScreen(username: widget.username, password: widget.password),
       const ChangePasswordScreen(),
     ];
@@ -92,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _getTitle() {
     switch (_currentIndex) {
       case 0:
-        return 'Inicio';
+        return 'Productos'; // 👈 cambiamos Inicio por Productos
       case 1:
         return 'Perfil';
       case 2:
@@ -100,80 +101,5 @@ class _HomeScreenState extends State<HomeScreen> {
       default:
         return 'Mi App';
     }
-  }
-}
-
-class HomeContent extends StatelessWidget {
-  final String username;
-
-  const HomeContent({super.key, required this.username});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '¡Bienvenido, $username!',
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-          const Card(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  Icon(Icons.home, size: 50, color: Colors.blue),
-                  SizedBox(height: 10),
-                  Text('Esta es la pantalla principal de la aplicación'),
-                  SizedBox(height: 10),
-                  Text(
-                    'Usa el menú lateral o la barra de navegación inferior para explorar las diferentes secciones.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          GridView.count(
-            shrinkWrap: true,
-            crossAxisCount: 2,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            children: [
-              _buildFeatureCard(Icons.person, 'Perfil', Colors.blue),
-              _buildFeatureCard(Icons.settings, 'Configuración', Colors.green),
-              _buildFeatureCard(Icons.notifications, 'Notificaciones', Colors.orange),
-              _buildFeatureCard(Icons.help, 'Ayuda', Colors.purple),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFeatureCard(IconData icon, String title, Color color) {
-    return Card(
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 40, color: color),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
