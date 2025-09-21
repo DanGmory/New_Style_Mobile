@@ -45,8 +45,10 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context); // 👉 obtenemos el tema actual
+
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 28, 128, 158),
+      backgroundColor: theme.scaffoldBackgroundColor, // usa el fondo del tema
       extendBodyBehindAppBar: true,
       body: Center(
         child: ScaleTransition(
@@ -59,17 +61,13 @@ class _SplashScreenState extends State<SplashScreen>
                 height: 100,
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'New Style App',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+                style: theme.textTheme.titleLarge, // usa tipografía del tema
               ),
               const SizedBox(height: 20),
-              const CircularProgressIndicator(
-                color: Colors.white,
+              CircularProgressIndicator(
+                color: theme.colorScheme.primary, // color dinámico del tema
               ),
             ],
           ),

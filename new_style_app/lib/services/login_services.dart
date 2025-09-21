@@ -6,22 +6,27 @@ class ProductService {
   late final Dio _dio;
 
   ProductService() {
-    const String localIp = "192.168.1.7";
+    // 👇 Ajusta esta IP con la de tu máquina (en la misma red WiFi/LAN)
+    const String localIp = "192.168.1.7"; 
     const int port = 3000;
 
     final String baseUrl = kIsWeb
-        ? "http://$localIp:3000/api_v1/products"
-        : "http://10.0.2.2:3000/api_v1/products"; 
+        ? "http://$localIp:$port/api_v1/products" // Web usa IP directa
+        : "http://10.0.2.2:$port/api_v1/products"; 
+        // 👆 Android Emulator redirige a localhost del PC
+        // En iOS Simulator puedes usar "http://localhost:$port"
 
-    _dio = Dio(BaseOptions(
-      baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
-      headers: {"Content-Type": "application/json"},
-    ));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl,
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
+        headers: {"Content-Type": "application/json"},
+      ),
+    );
   }
 
-  /// Listar todos los productos
+  /// 🔹 Listar todos los productos
   Future<List<Product>> getProducts() async {
     try {
       final response = await _dio.get('');
