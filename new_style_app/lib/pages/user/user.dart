@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../widgets/appbar.dart';
+import '../../models/register_model.dart'; // 🔹 Importamos ApiUser
 
 class UserScreen extends StatelessWidget {
-  final String username;
-  final String password;
+  final ApiUser user;
 
-  const UserScreen({
-    super.key,
-    required this.username,
-    required this.password,
-  });
+  const UserScreen({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -34,19 +30,24 @@ class UserScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
-                    _buildInfoRow('Usuario:', username),
+                    _buildInfoRow('ID:', user.id.toString()),
                     const SizedBox(height: 15),
-                    _buildInfoRow('Email:', '$username@demo.com'),
+                    _buildInfoRow('Usuario:', user.name),
                     const SizedBox(height: 15),
-                    _buildInfoRow('Contraseña:',
-                        '${'*' * password.length} (${password.length} caracteres)'),
+                    _buildInfoRow('Email:', user.email),
+                    const SizedBox(height: 15),
+                    _buildInfoRow('Rol:', user.role.toString()),
+                    const SizedBox(height: 15),
+                    _buildInfoRow('Estado:', user.state.toString()),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                // Aquí iría navegación a pantalla de edición de perfil
+              },
               child: const Text('Editar Perfil'),
             ),
           ],
@@ -63,9 +64,12 @@ class UserScreen extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         const SizedBox(width: 10),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 16),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 16),
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );

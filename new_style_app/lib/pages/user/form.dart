@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/appbar.dart';
+import '../../services/register_services.dart'; 
+import '../../models/register_model.dart'; 
 
 class UserFormScreen extends StatefulWidget {
   const UserFormScreen({super.key});
@@ -16,7 +18,11 @@ class _UserFormScreenState extends State<UserFormScreen> {
       TextEditingController();
   final TextEditingController _emailController = TextEditingController();
 
-  void _register() {
+  final RegisterService _registerService = RegisterService();
+
+  bool _isLoading = false;
+
+  Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
       if (_passwordController.text != _confirmPasswordController.text) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -25,13 +31,32 @@ class _UserFormScreenState extends State<UserFormScreen> {
         return;
       }
 
-      final userData = {
-        'username': _usernameController.text,
-        'password': _passwordController.text,
-        'email': _emailController.text,
-      };
+      setState(() => _isLoading = true);
 
-      Navigator.pop(context, userData);
+      try {
+        /// 🔹 Llamamos al service y pasamos los datos
+        final ApiUser user = await _registerService.registerUser(
+          _usernameController.text.trim(),
+          _passwordController.text.trim(),
+          _emailController.text.trim(),
+        );
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("✅ Usuario ${user.name} registrado con éxito")),
+        );
+
+        /// 🔹 Devuelve el usuario al cerrar la pantalla
+        Navigator.pop(context, user);
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("❌ Error al registrar: $e")),
+        );
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -51,7 +76,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
           child: ListView(
             children: [
               Image.asset(
-                'assets/img/logos/stamp.webp',
+                'assets/img/icons/logo.png',
                 height: 100,
               ),
               const SizedBox(height: 20),
@@ -128,8 +153,12 @@ class _UserFormScreenState extends State<UserFormScreen> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _register,
-                      child: const Text('Registrar'),
+                      onPressed: _isLoading ? null : _register,
+                      child: _isLoading
+                          ? const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                          : const Text('Registrar'),
                     ),
                   ),
                   const SizedBox(width: 10),
