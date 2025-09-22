@@ -44,7 +44,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("✅ Usuario ${user.name} registrado con éxito")),
+          SnackBar(content: Text("Usuario ${user.name} registrado con éxito")),
         );
 
         /// 🔹 Devuelve el usuario al cerrar la pantalla
@@ -52,7 +52,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("❌ Error al registrar: $e")),
+          SnackBar(content: Text(" Error al registrar: $e")),
         );
       } finally {
         if (mounted) setState(() => _isLoading = false);
