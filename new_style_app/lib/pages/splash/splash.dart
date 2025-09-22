@@ -45,7 +45,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context); // 👉 obtenemos el tema actual
+    final theme = Theme.of(context); // obtenemos el tema actual
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor, // usa el fondo del tema
