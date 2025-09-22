@@ -23,7 +23,7 @@ class RegisterService {
     );
   }
 
-  /// 🔹 Registro de usuario
+  /// Registro de usuario
   Future<ApiUser> registerUser(
       String username, String password, String email) async {
     try {
@@ -38,8 +38,8 @@ class RegisterService {
         },
       );
 
-      // 🔹 Depuración: ver respuesta del backend
-      debugPrint("🔹 Respuesta backend (registro): ${response.data}");
+      //  Depuración: ver respuesta del backend
+      debugPrint(" Respuesta backend (registro): ${response.data}");
 
       return ApiUser.fromJson(response.data);
     } on DioException catch (e) {
