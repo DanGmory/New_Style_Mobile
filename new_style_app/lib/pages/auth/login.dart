@@ -39,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = true);
 
       try {
-        // ✅ El servicio devuelve un ApiUser si todo está bien
+        //  El servicio devuelve un ApiUser si todo está bien
         final ApiUser user = await _loginService.loginUser(
           _usernameController.text.trim(),
           _passwordController.text.trim(),
@@ -53,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       } catch (e) {
         if (!mounted) return;
-        // ✅ Mostramos solo el mensaje sin "Exception: ..."
+        //  Mostramos solo el mensaje sin "Exception: ..."
         final errorMessage = e.toString().replaceFirst("Exception: ", "");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
