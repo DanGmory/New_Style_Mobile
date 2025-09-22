@@ -30,10 +30,12 @@ class _SplashScreenState extends State<SplashScreen>
     _controller.forward();
 
     Future.delayed(const Duration(seconds: 5), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
+      if (mounted) { // ✅ Evita error si el widget ya fue desmontado
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
     });
   }
 
@@ -57,13 +59,15 @@ class _SplashScreenState extends State<SplashScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Image.asset(
-                'assets/img/icons/logo.png',
+                'assets/img/icons/Logo.png',
                 height: 100,
               ),
               const SizedBox(height: 20),
               Text(
                 'New Style App',
-                style: theme.textTheme.titleLarge, // usa tipografía del tema
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 20),
               CircularProgressIndicator(
