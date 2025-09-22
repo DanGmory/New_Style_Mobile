@@ -1,19 +1,19 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart'; // 👈 para kIsWeb
+import 'package:flutter/foundation.dart'; //  para kIsWeb
 import '../models/products_model.dart';
 
 class ProductService {
   late final Dio _dio;
 
   ProductService() {
-    // 👇 Ajusta esta IP con la de tu máquina (en la misma red WiFi/LAN)
+    //  Ajusta esta IP con la de tu máquina (en la misma red WiFi/LAN)
     const String localIp = "192.168.1.7"; 
     const int port = 3000;
 
     final String baseUrl = kIsWeb
         ? "http://$localIp:$port/api_v1/products" // Web usa IP directa
         : "http://10.0.2.2:$port/api_v1/products"; 
-        // 👆 Android Emulator redirige a localhost del PC
+        // Android Emulator redirige a localhost del PC
         // En iOS Simulator puedes usar "http://localhost:$port"
 
     _dio = Dio(
@@ -26,7 +26,7 @@ class ProductService {
     );
   }
 
-  /// 🔹 Listar todos los productos
+  ///  Listar todos los productos
   Future<List<Product>> getProducts() async {
     try {
       final response = await _dio.get('');
@@ -37,7 +37,7 @@ class ProductService {
     }
   }
 
-  /// 🔹 Obtener producto por ID
+  ///  Obtener producto por ID
   Future<Product> getProductById(int id) async {
     try {
       final response = await _dio.get('/$id');
@@ -47,7 +47,7 @@ class ProductService {
     }
   }
 
-  /// 🔹 Crear producto
+  ///  Crear producto
   Future<Product> createProduct(Product product) async {
     try {
       final response = await _dio.post(
@@ -71,7 +71,7 @@ class ProductService {
     }
   }
 
-  /// 🔹 Actualizar producto
+  /// Actualizar producto
   Future<void> updateProduct(int id, Product product) async {
     try {
       await _dio.put(
@@ -94,7 +94,7 @@ class ProductService {
     }
   }
 
-  /// 🔹 Eliminar producto
+  /// Eliminar producto
   Future<void> deleteProduct(int id) async {
     try {
       await _dio.delete('/$id');
