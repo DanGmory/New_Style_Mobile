@@ -97,20 +97,20 @@ class _ProductScreenState extends State<ProductScreen> {
     });
   }
 
-  /// ✅ Método que intenta diferentes estrategias de carga
+  /// Método que intenta diferentes estrategias de carga
   Future<List<Product>> _loadProductsWithFallback() async {
     try {
       // Estrategia 1: Método normal
       return await _productService.getProducts();
     } catch (e1) {
-      print('❌ Método normal falló: $e1');
+      print(' Método normal falló: $e1');
       _lastError = 'Método principal: $e1';
       
       try {
         // Estrategia 2: Método alternativo con diferentes URLs
         return await _productService.getProductsAlternative();
       } catch (e2) {
-        print('❌ Método alternativo falló: $e2');
+        print(' Método alternativo falló: $e2');
         _lastError = 'Método alternativo: $e2';
         
         try {
@@ -129,7 +129,7 @@ class _ProductScreenState extends State<ProductScreen> {
     }
   }
 
-  /// ✅ Método para reintentar manualmente con diagnóstico
+  ///  Método para reintentar manualmente con diagnóstico
   void _retryConnection() async {
     setState(() {
       _isRetrying = true;
@@ -154,7 +154,7 @@ class _ProductScreenState extends State<ProductScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('❌ No se puede conectar al servidor'),
+                const Text(' No se puede conectar al servidor'),
                 const Text('Verifica:'),
                 const Text('• Servidor ejecutándose en puerto 3000'),
                 const Text('• Misma red WiFi'),
@@ -180,7 +180,7 @@ class _ProductScreenState extends State<ProductScreen> {
     });
   }
 
-  /// ✅ Método para mostrar diagnóstico completo
+  ///  Método para mostrar diagnóstico completo
   void _showDiagnostic() async {
     showDialog(
       context: context,
@@ -204,9 +204,9 @@ class _ProductScreenState extends State<ProductScreen> {
       
       try {
         await _productService.checkServerConnection();
-        diagnosticResult += '✅ ProductService: Conectado\n';
+        diagnosticResult += ' ProductService: Conectado\n';
       } catch (e) {
-        diagnosticResult += '❌ ProductService: $e\n';
+        diagnosticResult += ' ProductService: $e\n';
       }
 
       diagnosticResult += '\nÚltimo error: $_lastError';
