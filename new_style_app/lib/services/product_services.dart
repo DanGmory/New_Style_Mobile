@@ -6,7 +6,7 @@ class ProductService {
   late final Dio _dio;
 
   ProductService() {
-    const String localIp = "192.168.1.7";
+    const String localIp = "192.168.1.2";
     const int port = 3000;
 
     final String baseUrl = kIsWeb
@@ -227,7 +227,7 @@ class ProductService {
   /// ✅ Método alternativo usando diferentes configuraciones de red
   Future<List<Product>> getProductsAlternative() async {
     final List<String> baseUrls = [
-      "http://192.168.1.7:3000/api_v1/products",
+      "http://192.168.1.2:3000/api_v1/products",
       "http://10.0.2.2:3000/api_v1/products",
       "http://localhost:3000/api_v1/products"
     ];

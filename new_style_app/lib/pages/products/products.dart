@@ -16,11 +16,78 @@ class _ProductScreenState extends State<ProductScreen> {
   late Future<List<Product>> _futureProducts;
   bool _isRetrying = false;
   String _lastError = '';
+  final List<Product> _cartItems = []; // Lista temporal del carrito
 
   @override
   void initState() {
     super.initState();
     _loadProducts();
+  }
+
+  /// ✅ Método para formatear precios de forma segura
+  String _formatPrice(dynamic price) {
+    if (price == null) return '0.00';
+    
+    if (price is String) {
+      final parsedPrice = double.tryParse(price);
+      return parsedPrice?.toStringAsFixed(2) ?? '0.00';
+    }
+    
+    if (price is num) {
+      return price.toStringAsFixed(2);
+    }
+    
+    return '0.00';
+  }
+
+  /// ✅ Método para formatear cantidad de forma segura
+  String _formatAmount(dynamic amount) {
+    if (amount == null) return '0';
+    
+    if (amount is String) {
+      return amount;
+    }
+    
+    if (amount is num) {
+      return amount.toString();
+    }
+    
+    return '0';
+  }
+
+  /// ✅ Método para agregar producto al carrito
+  void _addToCart(Product product) {
+    // Aquí puedes implementar la lógica para agregar al carrito
+    // Por ejemplo, usando un provider, bloc, o servicio de carrito
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.shopping_cart, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '${product.name} agregado al carrito',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+        action: SnackBarAction(
+          label: 'Ver Carrito',
+          textColor: Colors.white,
+          onPressed: () {
+            // Navegar al carrito
+            // Navigator.pushNamed(context, '/cart');
+          },
+        ),
+      ),
+    );
+    
+    print('Producto agregado al carrito: ${product.name} - \${_formatPrice(product.price)}');
   }
 
   /// ✅ Método para cargar productos con múltiples estrategias
@@ -214,14 +281,14 @@ class _ProductScreenState extends State<ProductScreen> {
               Text("Descripción: ${product.description}"),
               const SizedBox(height: 5),
               Text(
-                "Precio: \${product.price.toStringAsFixed(2)}",
+                "Precio: \$${_formatPrice(product.price)}", // ✅ CORREGIDO
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.green,
                 ),
               ),
               const SizedBox(height: 5),
-              Text("Cantidad: ${product.amount}"),
+              Text("Cantidad: ${_formatAmount(product.amount)}"), // ✅ CORREGIDO
             ],
           ),
         ),
@@ -405,7 +472,7 @@ class _ProductScreenState extends State<ProductScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  "\${product.price.toStringAsFixed(2)}",
+                                  "\$${_formatPrice(product.price)}", // ✅ CORREGIDO
                                   style: const TextStyle(
                                     color: Colors.green,
                                     fontWeight: FontWeight.bold,
