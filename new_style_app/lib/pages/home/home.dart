@@ -5,17 +5,13 @@ import '../../widgets/navigation_bottom.dart';
 import '../user/user.dart';
 import '../auth/change_password.dart';
 import '../auth/login.dart';
-import '../products/products.dart'; 
+import '../products/products.dart';
+import '../../models/register_model.dart'; // 🔹 Importamos ApiUser
 
 class HomeScreen extends StatefulWidget {
-  final String username;
-  final String password;
+  final ApiUser user; // 🔹 Recibimos el usuario logueado
 
-  const HomeScreen({
-    super.key,
-    required this.username,
-    required this.password,
-  });
+  const HomeScreen({super.key, required this.user});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -33,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _pages = [
       const ProductScreen(),
-      UserScreen(username: widget.username, password: widget.password),
+      UserScreen(user: widget.user), // 🔹 Pasamos el ApiUser
       const ChangePasswordScreen(),
     ];
   }
@@ -64,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onMenuPressed: () => _scaffoldKey.currentState?.openDrawer(),
       ),
       drawer: CustomDrawer(
-        username: widget.username,
+        username: widget.user.name, // 🔹 Mostramos el nombre en el Drawer
         onItemSelected: _onDrawerItemSelected,
         onLogout: _logout,
         currentIndex: _currentIndex,
@@ -93,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _getTitle() {
     switch (_currentIndex) {
       case 0:
-        return 'Productos'; // cambiamos Inicio por Productos
+        return 'Productos';
       case 1:
         return 'Perfil';
       case 2:

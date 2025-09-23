@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../widgets/appbar.dart';
-import '../../models/register_model.dart'; //  Importamos ApiUser
+import '../../models/register_model.dart'; // 🔹 Importamos ApiUser
 
 class UserScreen extends StatelessWidget {
   final ApiUser user;
