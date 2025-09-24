@@ -122,7 +122,7 @@ class _ProductScreenState extends State<ProductScreen> {
               'Principal: ${e1.toString().substring(0, 50)}...\n'
               'Alternativo: ${e2.toString().substring(0, 50)}...');
         } catch (e3) {
-          print('❌ HTTP nativo falló: $e3');
+          print(' HTTP nativo falló: $e3');
           rethrow;
         }
       }
