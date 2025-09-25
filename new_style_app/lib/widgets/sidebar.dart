@@ -11,7 +11,7 @@ class CustomDrawer extends StatelessWidget {
     required this.username,
     required this.onItemSelected,
     required this.onLogout,
-    required this.currentIndex,
+    required this.currentIndex, required int notificationCount,
   });
 
   @override
@@ -61,7 +61,7 @@ class CustomDrawer extends StatelessWidget {
             ),
           ),
           Text(
-            'usuario@demo.com',
+            "",
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.textTheme.bodyMedium?.color?.withOpacity(0.8),
             ),

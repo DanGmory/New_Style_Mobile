@@ -25,13 +25,13 @@ class BottomNavigation extends StatelessWidget {
           label: 'Inicio',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Perfil',
+          icon: Icon(Icons.shopping_cart),
+          label: 'Carrito',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
-          label: 'Configuración',
-        ),
+          icon: Icon(Icons.person),
+          label: 'Perfil',
+        )
       ],
     );
   }

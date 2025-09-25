@@ -1,101 +1,122 @@
 import 'package:flutter/material.dart';
 import '../../widgets/appbar.dart';
-import '../../widgets/sidebar.dart';
-import '../../widgets/navigation_bottom.dart';
-import '../user/user.dart';
-import '../auth/change_password.dart';
-import '../auth/login.dart';
-import '../products/products.dart';
-import '../../models/register_model.dart'; // 🔹 Importamos ApiUser
+import '../../models/register_model.dart';
 
-class HomeScreen extends StatefulWidget {
-  final ApiUser user; // 🔹 Recibimos el usuario logueado
+class HomeScreen extends StatelessWidget {
+  final ApiUser user;
 
   const HomeScreen({super.key, required this.user});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
-  final PageController _pageController = PageController();
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  late List<Widget> _pages;
-
-  @override
-  void initState() {
-    super.initState();
-    _pages = [
-      const ProductScreen(),
-      UserScreen(user: widget.user), // 🔹 Pasamos el ApiUser
-      const ChangePasswordScreen(),
-    ];
-  }
-
-  void _onDrawerItemSelected(int index) {
-    setState(() {
-      _currentIndex = index;
-      _pageController.jumpToPage(index);
-    });
-    _scaffoldKey.currentState?.closeDrawer();
-  }
-
-  void _logout() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-      (route) => false,
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
       appBar: CustomAppBar(
-        title: _getTitle(),
+        title: "Bienvenido, ${user.name}",
         showBackButton: false,
-        onMenuPressed: () => _scaffoldKey.currentState?.openDrawer(),
       ),
-      drawer: CustomDrawer(
-        username: widget.user.name, // 🔹 Mostramos el nombre en el Drawer
-        onItemSelected: _onDrawerItemSelected,
-        onLogout: _logout,
-        currentIndex: _currentIndex,
-      ),
-      body: PageView(
-        controller: _pageController,
-        children: _pages,
-        onPageChanged: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-      ),
-      bottomNavigationBar: BottomNavigation(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-          _pageController.jumpToPage(index);
-        },
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 🔹 Banner superior
+            Container(
+              margin: const EdgeInsets.all(16),
+              height: 180,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                image: const DecorationImage(
+                  image: AssetImage("assets/img/banner.jpg"),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            // 🔹 Título sección
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                "Artículos destacados",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            // 🔹 Grid de artículos
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2, // dos columnas
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.8,
+                ),
+                itemCount: 6, // 🔹 Número de artículos
+                itemBuilder: (context, index) {
+                  return _buildArticleCard(
+                    image: "assets/img/product${index + 1}.jpg",
+                    title: "Producto ${index + 1}",
+                    price: "\$${(index + 1) * 20}.000",
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  String _getTitle() {
-    switch (_currentIndex) {
-      case 0:
-        return 'Productos';
-      case 1:
-        return 'Perfil';
-      case 2:
-        return 'Configuración';
-      default:
-        return 'Mi App';
-    }
+  // 🔹 Widget para tarjeta de artículo
+  Widget _buildArticleCard({
+    required String image,
+    required String title,
+    required String price,
+  }) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 3,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Imagen del producto
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            child: Image.asset(
+              image,
+              height: 120,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    )),
+                const SizedBox(height: 4),
+                Text(price,
+                    style: const TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.w600,
+                    )),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
