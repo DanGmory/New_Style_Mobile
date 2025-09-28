@@ -73,10 +73,7 @@ class BlogPost extends StatelessWidget {
             const SizedBox(height: 12),
 
             // Contenido
-            Text(
-              content,
-              style: theme.textTheme.bodyMedium,
-            ),
+            Text(content, style: theme.textTheme.bodyMedium),
           ],
         ),
       ),

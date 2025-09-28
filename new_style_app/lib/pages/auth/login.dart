@@ -28,9 +28,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (result != null && result is ApiUser) {
       _usernameController.text = result.email;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Usuario ${result.name} registrado exitosamente')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Usuario ${result.name} registrado exitosamente'),
+          ),
+        );
+      }
     }
   }
 
@@ -56,10 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
         //  Mostramos solo el mensaje sin "Exception: ..."
         final errorMessage = e.toString().replaceFirst("Exception: ", "");
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
         );
       } finally {
         if (mounted) setState(() => _isLoading = false);
@@ -78,10 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset(
-                'assets/img/icons/Logo.png',
-                height: 100,
-              ),
+              Image.asset('assets/img/icons/Logo.png', height: 100),
               const SizedBox(height: 20),
               TextFormField(
                 controller: _usernameController,
@@ -90,8 +88,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   prefixIcon: Icon(Icons.mail),
                 ),
                 validator: (value) {
-                  final emailRegex =
-                      RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                  final emailRegex = RegExp(
+                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                  );
                   if (value == null || value.isEmpty) {
                     return 'Por favor ingrese su correo electrónico';
                   } else if (!emailRegex.hasMatch(value)) {

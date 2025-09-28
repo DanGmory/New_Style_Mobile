@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../services/product_services.dart';
+import '../../services/cart_service.dart';
 import '../../models/products_model.dart';
 
 // Enum para estados de carga más claros
-enum ProductLoadingState {
-  loading,
-  loaded,
-  error,
-  empty,
-  retrying,
-}
+enum ProductLoadingState { loading, loaded, error, empty, retrying }
 
 // Clase para manejar el estado de la aplicación
 class ProductState {
@@ -49,7 +44,9 @@ class ProductScreen extends StatefulWidget {
 
 class _ProductScreenState extends State<ProductScreen> {
   final ProductService _productService = ProductService();
-  ProductState _currentState = const ProductState(state: ProductLoadingState.loading);
+  ProductState _currentState = const ProductState(
+    state: ProductLoadingState.loading,
+  );
 
   // Controladores para animaciones y scroll
   final ScrollController _scrollController = ScrollController();
@@ -69,97 +66,136 @@ class _ProductScreenState extends State<ProductScreen> {
   /// Método para formatear precios de forma segura con validación mejorada
   String _formatPrice(dynamic price) {
     if (price == null) return '0.00';
-    
+
     try {
       if (price is String) {
         if (price.isEmpty) return '0.00';
         final parsedPrice = double.tryParse(price.replaceAll(',', ''));
         return parsedPrice?.toStringAsFixed(2) ?? '0.00';
       }
-      
+
       if (price is num) {
         return price.toStringAsFixed(2);
       }
     } catch (e) {
       debugPrint('Error formatting price: $e');
     }
-    
+
     return '0.00';
   }
 
   /// Método para formatear cantidad de forma segura
   String _formatAmount(dynamic amount) {
     if (amount == null) return '0';
-    
+
     try {
       if (amount is String) {
         return amount.isEmpty ? '0' : amount;
       }
-      
+
       if (amount is num) {
         return amount.toString();
       }
     } catch (e) {
       debugPrint('Error formatting amount: $e');
     }
-    
+
     return '0';
   }
 
   /// Método mejorado para agregar al carrito con mejor UX
-  void _addToCart(Product product) {
-    // Vibración táctil si está disponible
-    // HapticFeedback.lightImpact();
-    
-    // Animación del botón o card
-    // Aquí podrías agregar una animación
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.shopping_cart_outlined, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                  Text(
-                    'Agregado por \$${_formatPrice(product.price)}',
-                    style: const TextStyle(fontSize: 12, color: Colors.white70),
-                  ),
-                ],
+  Future<void> _addToCart(Product product) async {
+    try {
+      // Convertir Product a Map para el CartService
+      final productMap = {
+        'Product_id': product.id,
+        'Product_name': product.name,
+        'Brand_name': product.brand,
+        'price': product.price,
+        'Image_url': product.imageUrl,
+        'Product_category': product.category,
+        'Product_description': product.description,
+        'Size_name': product.size,
+        'Color_name': product.color,
+      };
+
+      final cartService = CartService();
+      await cartService.addToCart(productMap, quantity: 1);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_outline, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    Text(
+                      'Agregado al carrito por \$${_formatPrice(product.price)}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+          backgroundColor: Colors.green.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          duration: const Duration(seconds: 3),
+          action: SnackBarAction(
+            label: 'Ver Carrito',
+            textColor: Colors.white,
+            onPressed: () {
+              // Navegar a la página del carrito (índice 2 en las features)
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+                // Aquí podrías usar un callback o estado global para cambiar a la pestaña del carrito
+              }
+            },
+          ),
         ),
-        backgroundColor: Colors.green.shade600,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        duration: const Duration(seconds: 3),
-        action: SnackBarAction(
-          label: 'Ver Carrito',
-          textColor: Colors.white,
-          onPressed: () {
-            // Navigator.pushNamed(context, '/cart');
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Navegación al carrito (implementar)'),
-                duration: Duration(seconds: 1),
+      );
+
+      debugPrint(
+        'Producto agregado al carrito: ${product.name} - \$${_formatPrice(product.price)}',
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text('Error al agregar al carrito. Inténtalo de nuevo.'),
               ),
-            );
-          },
+            ],
+          ),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          duration: const Duration(seconds: 2),
         ),
-      ),
-    );
-    
-    debugPrint('Producto agregado: ${product.name} - \$${_formatPrice(product.price)}');
+      );
+
+      debugPrint('Error agregando al carrito: $e');
+    }
   }
 
   /// Método principal para cargar productos con mejor manejo de estados
@@ -168,8 +204,8 @@ class _ProductScreenState extends State<ProductScreen> {
 
     setState(() {
       _currentState = _currentState.copyWith(
-        state: _currentState.products.isEmpty 
-            ? ProductLoadingState.loading 
+        state: _currentState.products.isEmpty
+            ? ProductLoadingState.loading
             : ProductLoadingState.loaded,
         isRetrying: _currentState.products.isNotEmpty,
       );
@@ -177,19 +213,18 @@ class _ProductScreenState extends State<ProductScreen> {
 
     try {
       final products = await _loadProductsWithFallback();
-      
+
       if (!mounted) return;
 
       setState(() {
         _currentState = ProductState(
-          state: products.isEmpty 
-              ? ProductLoadingState.empty 
+          state: products.isEmpty
+              ? ProductLoadingState.empty
               : ProductLoadingState.loaded,
           products: products,
           isRetrying: false,
         );
       });
-
     } catch (e) {
       if (!mounted) return;
 
@@ -223,7 +258,7 @@ class _ProductScreenState extends State<ProductScreen> {
       } catch (e) {
         lastException = e is Exception ? e : Exception(e.toString());
         debugPrint('Estrategia ${i + 1} falló: $e');
-        
+
         // Pequeña pausa entre intentos
         if (i < strategies.length - 1) {
           await Future.delayed(const Duration(milliseconds: 500));
@@ -309,7 +344,7 @@ class _ProductScreenState extends State<ProductScreen> {
 
     try {
       final diagnostics = await _runDiagnostics();
-      
+
       if (mounted) {
         Navigator.of(context).pop();
         _showDiagnosticResults(diagnostics);
@@ -324,7 +359,7 @@ class _ProductScreenState extends State<ProductScreen> {
 
   Future<Map<String, String>> _runDiagnostics() async {
     final results = <String, String>{};
-    
+
     // Probar conectividad básica
     try {
       await _productService.checkServerConnection();
@@ -343,9 +378,10 @@ class _ProductScreenState extends State<ProductScreen> {
 
     results['Estado Actual'] = _currentState.state.toString();
     results['Productos Cargados'] = '${_currentState.products.length}';
-    
+
     if (_currentState.errorMessage != null) {
-      results['Último Error'] = '${_currentState.errorMessage!.substring(0, 100)}...';
+      results['Último Error'] =
+          '${_currentState.errorMessage!.substring(0, 100)}...';
     }
 
     return results;
@@ -457,7 +493,7 @@ class _ProductScreenState extends State<ProductScreen> {
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 10,
                                 offset: const Offset(0, 5),
                               ),
@@ -468,20 +504,21 @@ class _ProductScreenState extends State<ProductScreen> {
                             child: Image.network(
                               product.imageUrl,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                color: Colors.grey[200],
-                                child: const Icon(
-                                  Icons.image_not_supported,
-                                  size: 60,
-                                  color: Colors.grey,
-                                ),
-                              ),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                    color: Colors.grey[200],
+                                    child: const Icon(
+                                      Icons.image_not_supported,
+                                      size: 60,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
                             ),
                           ),
                         ),
-                      
+
                       const SizedBox(height: 20),
-                      
+
                       // Nombre del producto
                       Text(
                         product.name,
@@ -490,9 +527,9 @@ class _ProductScreenState extends State<ProductScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      
+
                       const SizedBox(height: 8),
-                      
+
                       // Categoría
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -511,9 +548,9 @@ class _ProductScreenState extends State<ProductScreen> {
                           ),
                         ),
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // Precio
                       Row(
                         children: [
@@ -531,9 +568,9 @@ class _ProductScreenState extends State<ProductScreen> {
                           ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 12),
-                      
+
                       // Cantidad disponible
                       Row(
                         children: [
@@ -545,9 +582,9 @@ class _ProductScreenState extends State<ProductScreen> {
                           ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // Descripción
                       const Text(
                         'Descripción',
@@ -561,9 +598,9 @@ class _ProductScreenState extends State<ProductScreen> {
                         product.description,
                         style: const TextStyle(fontSize: 16, height: 1.5),
                       ),
-                      
+
                       const SizedBox(height: 24),
-                      
+
                       // Botón agregar al carrito
                       SizedBox(
                         width: double.infinity,
@@ -604,8 +641,8 @@ class _ProductScreenState extends State<ProductScreen> {
           const CircularProgressIndicator(),
           const SizedBox(height: 16),
           Text(
-            _currentState.isRetrying 
-                ? 'Reintentando conexión...' 
+            _currentState.isRetrying
+                ? 'Reintentando conexión...'
                 : 'Cargando productos...',
             style: const TextStyle(fontSize: 16),
           ),
@@ -637,18 +674,12 @@ class _ProductScreenState extends State<ProductScreen> {
             const SizedBox(height: 24),
             const Text(
               "Error al cargar productos",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Text(
               _currentState.errorMessage ?? 'Error desconocido',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
               textAlign: TextAlign.center,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
@@ -659,7 +690,7 @@ class _ProductScreenState extends State<ProductScreen> {
               children: [
                 ElevatedButton.icon(
                   onPressed: _currentState.isRetrying ? null : _retryConnection,
-                  icon: _currentState.isRetrying 
+                  icon: _currentState.isRetrying
                       ? const SizedBox(
                           width: 16,
                           height: 16,
@@ -667,7 +698,7 @@ class _ProductScreenState extends State<ProductScreen> {
                         )
                       : const Icon(Icons.refresh),
                   label: Text(
-                    _currentState.isRetrying ? 'Reintentando...' : 'Reintentar'
+                    _currentState.isRetrying ? 'Reintentando...' : 'Reintentar',
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
@@ -709,17 +740,12 @@ class _ProductScreenState extends State<ProductScreen> {
           const SizedBox(height: 24),
           const Text(
             "No hay productos disponibles",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 8),
           Text(
             "Intenta actualizar la página",
-            style: TextStyle(
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(color: Colors.grey.shade600),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
@@ -765,7 +791,7 @@ class _ProductScreenState extends State<ProductScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -800,13 +826,13 @@ class _ProductScreenState extends State<ProductScreen> {
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) =>
                                     Container(
-                                  color: Colors.grey[100],
-                                  child: const Icon(
-                                    Icons.image_not_supported,
-                                    size: 40,
-                                    color: Colors.grey,
-                                  ),
-                                ),
+                                      color: Colors.grey[100],
+                                      child: const Icon(
+                                        Icons.image_not_supported,
+                                        size: 40,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
                               ),
                             )
                           : Container(
@@ -831,7 +857,7 @@ class _ProductScreenState extends State<ProductScreen> {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),

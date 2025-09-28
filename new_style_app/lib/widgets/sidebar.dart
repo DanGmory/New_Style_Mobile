@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
+import '../models/features_page.dart';
+import '../models/register_model.dart';
+import '../config/features.dart';
 
 class CustomDrawer extends StatelessWidget {
   final String username;
   final Function(int) onItemSelected;
   final VoidCallback onLogout;
   final int currentIndex;
+  final ApiUser? user;
 
   const CustomDrawer({
     super.key,
     required this.username,
     required this.onItemSelected,
     required this.onLogout,
-    required this.currentIndex, required int notificationCount,
+    required this.currentIndex,
+    this.user,
   });
 
   @override
@@ -37,7 +42,7 @@ class CustomDrawer extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             theme.primaryColor,
-            theme.primaryColor.withOpacity(0.8),
+            theme.primaryColor.withValues(alpha: 0.8),
           ],
         ),
       ),
@@ -47,11 +52,7 @@ class CustomDrawer extends StatelessWidget {
           CircleAvatar(
             radius: 30,
             backgroundColor: theme.colorScheme.surface,
-            child: Icon(
-              Icons.person,
-              size: 40,
-              color: theme.iconTheme.color,
-            ),
+            child: Icon(Icons.person, size: 40, color: theme.iconTheme.color),
           ),
           const SizedBox(height: 15),
           Text(
@@ -63,7 +64,7 @@ class CustomDrawer extends StatelessWidget {
           Text(
             "",
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.8),
+              color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
             ),
           ),
         ],
@@ -72,51 +73,33 @@ class CustomDrawer extends StatelessWidget {
   }
 
   Widget _buildMenuItems(BuildContext context, ThemeData theme) {
+    // Generar features dinámicamente si el usuario está disponible
+    List<FeaturePage> features = [];
+    if (user != null) {
+      features = buildFeatures(user!);
+    }
+
     return Column(
       children: [
-        _buildListTile(
-          theme,
-          Icons.home,
-          'Inicio',
-          0,
-          currentIndex == 0,
-        ),
-        _buildListTile(
-          theme,
-          Icons.person,
-          'Mi Perfil',
-          1,
-          currentIndex == 1,
-        ),
-        _buildListTile(
-          theme,
-          Icons.settings,
-          'Configuración',
-          2,
-          currentIndex == 2,
-        ),
+        // Features principales
+        ...features.asMap().entries.map((entry) {
+          final index = entry.key;
+          final feature = entry.value;
+          return _buildListTile(
+            theme,
+            feature.icon,
+            feature.title,
+            index,
+            currentIndex == index,
+          );
+        }),
+
         const Divider(),
-        _buildListTile(
-          theme,
-          Icons.notifications,
-          'Notificaciones',
-          3,
-          false,
-        ),
-        _buildListTile(
-          theme,
-          Icons.help,
-          'Ayuda',
-          4,
-          false,
-        ),
-        _buildListTile(
-          theme,
-          Icons.info,
-          'Acerca de',
-          5,
-          false,
-        ),
+
+        // Elementos especiales
+        _buildListTile(theme, Icons.notifications, 'Notificaciones', -1, false),
+        _buildListTile(theme, Icons.help, 'Ayuda', -2, false),
+        _buildListTile(theme, Icons.info, 'Acerca de', -3, false),
         const Divider(),
         _buildLogoutTile(context, theme),
       ],
@@ -153,7 +136,7 @@ class CustomDrawer extends StatelessWidget {
           : null,
       onTap: () => onItemSelected(index),
       selected: isSelected,
-      selectedTileColor: theme.colorScheme.primary.withOpacity(0.1),
+      selectedTileColor: theme.colorScheme.primary.withValues(alpha: 0.1),
     );
   }
 

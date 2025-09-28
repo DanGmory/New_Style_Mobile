@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../widgets/blog.dart';
 
 class BlogPostPage extends StatelessWidget {
   final String title;
@@ -22,10 +21,7 @@ class BlogPostPage extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Blog"),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text("Blog"), centerTitle: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -63,19 +59,14 @@ class BlogPostPage extends StatelessWidget {
             // Imagen principal
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-              ),
+              child: Image.network(imageUrl, fit: BoxFit.cover),
             ),
             const SizedBox(height: 16),
 
             // Contenido
             Text(
               content,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                height: 1.5,
-              ),
+              style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
             ),
           ],
         ),

@@ -30,8 +30,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar:
-          const CustomAppBar(title: 'Cambiar Contraseña', showBackButton: true),
+      appBar: const CustomAppBar(
+        title: 'Cambiar Contraseña',
+        showBackButton: true,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Form(
