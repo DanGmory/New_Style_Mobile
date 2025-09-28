@@ -20,18 +20,12 @@ class BottomNavigation extends StatelessWidget {
       showUnselectedLabels: true,
       type: BottomNavigationBarType.fixed,
       items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Inicio'),
         BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Inicio',
+          icon: Icon(Icons.shopping_cart),
+          label: 'Carrito',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Perfil',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
-          label: 'Configuración',
-        ),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
       ],
     );
   }

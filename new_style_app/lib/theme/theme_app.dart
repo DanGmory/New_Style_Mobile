@@ -27,10 +27,7 @@ class CustomTheme {
         fontWeight: FontWeight.bold,
         color: Colors.black, // nombre de usuario en claro
       ),
-      bodyMedium: TextStyle(
-        fontSize: 16,
-        color: Colors.black87,
-      ),
+      bodyMedium: TextStyle(fontSize: 16, color: Colors.black87),
     ),
     iconTheme: const IconThemeData(
       color: Colors.blue, // íconos en claro
@@ -63,10 +60,7 @@ class CustomTheme {
         fontWeight: FontWeight.bold,
         color: Colors.white, // nombre de usuario en oscuro
       ),
-      bodyMedium: TextStyle(
-        fontSize: 16,
-        color: Color(0xFFDDDDDD),
-      ),
+      bodyMedium: TextStyle(fontSize: 16, color: Color(0xFFDDDDDD)),
     ),
     iconTheme: const IconThemeData(
       color: Colors.white, // íconos en oscuro

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/appbar.dart';
-import '../../services/register_services.dart'; 
-import '../../models/register_model.dart'; 
+import '../../services/register_services.dart';
+import '../../models/register_model.dart';
 
 class UserFormScreen extends StatefulWidget {
   const UserFormScreen({super.key});
@@ -44,16 +44,18 @@ class _UserFormScreenState extends State<UserFormScreen> {
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("✅ Usuario ${user.name} registrado con éxito")),
+          SnackBar(
+            content: Text("✅ Usuario ${user.name} registrado con éxito"),
+          ),
         );
 
         /// 🔹 Devuelve el usuario al cerrar la pantalla
         Navigator.pop(context, user);
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("❌ Error al registrar: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("❌ Error al registrar: $e")));
       } finally {
         if (mounted) setState(() => _isLoading = false);
       }
@@ -67,18 +69,17 @@ class _UserFormScreenState extends State<UserFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar:
-          const CustomAppBar(title: 'Registrar Usuario', showBackButton: true),
+      appBar: const CustomAppBar(
+        title: 'Registrar Usuario',
+        showBackButton: true,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
-              Image.asset(
-                'assets/img/icons/logo.png',
-                height: 100,
-              ),
+              Image.asset('assets/img/icons/logo.png', height: 100),
               const SizedBox(height: 20),
               TextFormField(
                 controller: _usernameController,
@@ -155,9 +156,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _register,
                       child: _isLoading
-                          ? const CircularProgressIndicator(
-                              color: Colors.white,
-                            )
+                          ? const CircularProgressIndicator(color: Colors.white)
                           : const Text('Registrar'),
                     ),
                   ),

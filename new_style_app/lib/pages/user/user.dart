@@ -10,8 +10,10 @@ class UserScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar:
-          const CustomAppBar(title: 'Perfil de Usuario', showBackButton: true),
+      appBar: const CustomAppBar(
+        title: 'Perfil de Usuario',
+        showBackButton: true,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(

@@ -46,7 +46,7 @@ class Product {
   }
 
   ///  Getters útiles (como en tu modelo de Pokemon)
-  String get capitalizedName => 
+  String get capitalizedName =>
       name.isNotEmpty ? name[0].toUpperCase() + name.substring(1) : name;
 
   String get formattedPrice => '\$${price.toStringAsFixed(2)}';
