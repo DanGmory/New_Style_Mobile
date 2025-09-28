@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/features_page.dart';
 import '../models/register_model.dart';
 import '../config/features.dart';
+import '../services/theme_service.dart';
 
 class CustomDrawer extends StatelessWidget {
   final String username;
@@ -9,6 +10,7 @@ class CustomDrawer extends StatelessWidget {
   final VoidCallback onLogout;
   final int currentIndex;
   final ApiUser? user;
+  final ThemeService themeService;
 
   const CustomDrawer({
     super.key,
@@ -16,6 +18,7 @@ class CustomDrawer extends StatelessWidget {
     required this.onItemSelected,
     required this.onLogout,
     required this.currentIndex,
+    required this.themeService,
     this.user,
   });
 
@@ -76,7 +79,7 @@ class CustomDrawer extends StatelessWidget {
     // Generar features dinámicamente si el usuario está disponible
     List<FeaturePage> features = [];
     if (user != null) {
-      features = buildFeatures(user!);
+      features = buildFeatures(user!, themeService: themeService);
     }
 
     return Column(

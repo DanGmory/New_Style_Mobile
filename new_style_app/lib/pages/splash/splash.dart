@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../auth/login.dart';
+import '../../services/theme_service.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  final ThemeService themeService;
+
+  const SplashScreen({super.key, required this.themeService});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -33,7 +36,10 @@ class _SplashScreenState extends State<SplashScreen>
         // ✅ Evita error si el widget ya fue desmontado
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          MaterialPageRoute(
+            builder: (context) =>
+                LoginScreen(themeService: widget.themeService),
+          ),
         );
       }
     });
