@@ -8,11 +8,13 @@ import '../../models/features_page.dart';
 import '../../config/features.dart';
 import '../../services/cart_service.dart';
 import '../../services/logger_service.dart';
+import '../../services/theme_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final ApiUser user;
+  final ThemeService themeService;
 
-  const HomeScreen({super.key, required this.user});
+  const HomeScreen({super.key, required this.user, required this.themeService});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -34,6 +36,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _features = buildFeatures(
       widget.user,
       onNavigateToProducts: _navigateToProductsPage,
+      themeService: widget.themeService,
     );
     _loadCartItemCount();
     WidgetsBinding.instance.addObserver(this);
@@ -122,7 +125,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _logout() {
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      MaterialPageRoute(
+        builder: (context) => LoginScreen(themeService: widget.themeService),
+      ),
       (route) => false,
     );
   }
@@ -166,6 +171,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           onLogout: _logout,
           currentIndex: _currentIndex,
           user: widget.user,
+          themeService: widget.themeService,
         ),
         body: PageView(
           controller: _pageController,

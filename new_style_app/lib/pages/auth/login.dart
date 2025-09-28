@@ -3,10 +3,13 @@ import '../../widgets/appbar.dart';
 import '../home/home.dart';
 import '../user/form.dart';
 import '../../services/login_services.dart';
+import '../../services/theme_service.dart';
 import '../../models/register_model.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final ThemeService themeService;
+
+  const LoginScreen({super.key, required this.themeService});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -53,7 +56,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomeScreen(user: user)),
+          MaterialPageRoute(
+            builder: (context) =>
+                HomeScreen(user: user, themeService: widget.themeService),
+          ),
         );
       } catch (e) {
         if (!mounted) return;

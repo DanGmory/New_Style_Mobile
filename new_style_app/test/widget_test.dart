@@ -9,13 +9,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:new_style_app/main.dart';
 import 'package:new_style_app/services/logger_service.dart';
+import 'package:new_style_app/services/theme_service.dart';
 
 void main() {
   testWidgets('MyApp should be created successfully', (
     WidgetTester tester,
   ) async {
+    // Create ThemeService without initialization for testing
+    final themeService = ThemeService();
+
     // Just create the app widget without pumping to avoid timer issues
-    const app = MyApp();
+    final app = MyApp(themeService: themeService);
     expect(app, isNotNull);
     expect(app.runtimeType, equals(MyApp));
   });

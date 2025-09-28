@@ -3,13 +3,15 @@ import '../pages/home/inicio.dart';
 import '../pages/products/products.dart';
 import '../pages/cart/cart.dart';
 import '../pages/user/user.dart';
-import '../pages/auth/change_password.dart';
+import '../pages/settings/settings.dart';
+import '../services/theme_service.dart';
 import '../models/register_model.dart';
 import '../models/features_page.dart';
 
 List<FeaturePage> buildFeatures(
   ApiUser user, {
   VoidCallback? onNavigateToProducts,
+  required ThemeService themeService,
 }) {
   return [
     FeaturePage(
@@ -32,10 +34,10 @@ List<FeaturePage> buildFeatures(
       icon: Icons.person,
       page: UserScreen(user: user),
     ),
-    const FeaturePage(
+    FeaturePage(
       title: 'Configuración',
       icon: Icons.settings,
-      page: ChangePasswordScreen(),
+      page: SettingsScreen(themeService: themeService),
     ),
   ];
 }
