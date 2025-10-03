@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:io';
 import '../models/register_model.dart';
+import '../config/api_config.dart';
 
 class AuthService {
   Dio? _dio;
@@ -74,8 +75,8 @@ class AuthService {
       ];
 
       for (String ip in commonIPs) {
-        final testUrl = "http://$ip:$port/api_v1";
-        if (await _testConnection("$testUrl/login", isAuthEndpoint: true)) {
+        final testUrl = "http://$ip:$port";
+        if (await _testConnection("$testUrl${ApiConfig.urlLogin}", isAuthEndpoint: true)) {
           _dynamicIp = ip;
           if (kDebugMode) {
             print('IP dinámica detectada para Auth: $ip');
@@ -85,7 +86,7 @@ class AuthService {
       }
 
       _dynamicIp = 'localhost';
-      return "http://localhost:$port/api_v1";
+      return "http://localhost:$port";
     }
     // Para dispositivos móviles
     else {
@@ -106,9 +107,9 @@ class AuthService {
             ];
 
             for (String ip in ipsToTest) {
-              final testUrl = "http://$ip:$port/api_v1";
+              final testUrl = "http://$ip:$port";
               if (await _testConnection(
-                "$testUrl/login",
+                "$testUrl${ApiConfig.urlLogin}",
                 isAuthEndpoint: true,
               )) {
                 _dynamicIp = ip;
@@ -127,7 +128,7 @@ class AuthService {
       }
 
       _dynamicIp = '10.0.2.2';
-      return "http://10.0.2.2:$port/api_v1";
+      return "http://10.0.2.2:$port";
     }
   }
 
@@ -188,14 +189,14 @@ class AuthService {
       );
 
       // Para endpoints de auth, hacemos un GET simple para ver si responde
-      final response = await testDio.get(url.replaceAll('/login', '/status'));
+      final response = await testDio.get(url.replaceAll(ApiConfig.urlLogin, '/api_v1/status'));
       return response.statusCode == 200 ||
           response.statusCode ==
               404; // 404 también indica que el servidor responde
     } catch (e) {
       // Si falla el /status, probamos directamente con el endpoint base
       try {
-        final baseUrl = url.replaceAll('/login', '');
+        final baseUrl = url.replaceAll(ApiConfig.urlLogin, '/api_v1');
         final Dio testDio = Dio(
           BaseOptions(
             connectTimeout: const Duration(seconds: 5),
@@ -219,7 +220,7 @@ class AuthService {
 
     try {
       final response = await _dio!.post(
-        '/login',
+        ApiConfig.urlLogin,
         data: {"User_mail": email, "User_password": password},
       );
 
@@ -273,7 +274,7 @@ class AuthService {
         }
 
         final response = await alternativeDio.post(
-          '/login',
+          ApiConfig.urlLogin,
           data: {"User_mail": email, "User_password": password},
         );
 
@@ -306,18 +307,18 @@ class AuthService {
 
     // URLs básicas
     urls.addAll([
-      "http://localhost:$port/api_v1",
-      "http://127.0.0.1:$port/api_v1",
+      "http://localhost:$port",
+      "http://127.0.0.1:$port",
     ]);
 
     // Agregar IP detectada dinámicamente
     if (_dynamicIp != null) {
-      urls.add("http://$_dynamicIp:$port/api_v1");
+      urls.add("http://$_dynamicIp:$port");
     }
 
     // Para móviles
     if (!kIsWeb) {
-      urls.add("http://10.0.2.2:$port/api_v1");
+      urls.add("http://10.0.2.2:$port");
 
       try {
         final String? localIP = await _getLocalIP();
@@ -328,7 +329,7 @@ class AuthService {
             // Solo probar las IPs más comunes para auth (más rápido)
             final commonIPs = [1, 2, 10, 100, 101, 102, 200, 254];
             for (int ip in commonIPs) {
-              urls.add("http://$networkBase.$ip:$port/api_v1");
+              urls.add("http://$networkBase.$ip:$port");
             }
           }
         }
@@ -345,7 +346,7 @@ class AuthService {
     final List<String> testUrls = await _getAllPossibleUrls();
 
     for (String testUrl in testUrls) {
-      if (await _testConnection("$testUrl/login", isAuthEndpoint: true)) {
+      if (await _testConnection("$testUrl${ApiConfig.urlLogin}", isAuthEndpoint: true)) {
         if (kDebugMode) {
           print('Servidor de auth encontrado en: $testUrl');
         }
@@ -381,7 +382,7 @@ class AuthService {
 
     try {
       final response = await _dio!.post(
-        '/register',
+        ApiConfig.urlRegister,
         data: {
           "User_name": name,
           "User_mail": email,
@@ -442,7 +443,7 @@ class AuthService {
         }
 
         final response = await alternativeDio.post(
-          '/register',
+          ApiConfig.urlRegister,
           data: {
             "User_name": name,
             "User_mail": email,
