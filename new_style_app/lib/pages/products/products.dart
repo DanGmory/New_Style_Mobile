@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../services/product_services.dart';
 import '../../services/cart_service.dart';
+import '../../services/image_service.dart';
+import '../../widgets/product_image.dart';
 import '../../models/products_model.dart';
 
 // Enum para estados de carga más claros
@@ -190,6 +192,12 @@ class _ProductScreenState extends State<ProductScreen> {
     }
 
     return '0';
+  }
+
+  /// Construir URL de imagen con IP dinámica usando ImageService
+  String _buildImageUrl(String imageUrl) {
+    final currentIP = _productService.getCurrentIP();
+    return ImageService.buildImageUrl(imageUrl, serverIP: currentIP);
   }
 
   /// Método mejorado para agregar al carrito con mejor UX
@@ -412,6 +420,144 @@ class _ProductScreenState extends State<ProductScreen> {
     );
   }
 
+  /// Probar URLs de imágenes
+  Future<void> _testImageUrls() async {
+    if (_currentState.products.isEmpty) {
+      _showError('No hay productos para probar imágenes');
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 12),
+            Text('Probando imágenes'),
+          ],
+        ),
+        content: const Text('Verificando URLs de imágenes...'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+
+    try {
+      final imageResults = <String, String>{};
+      
+      // Probar las primeras 5 imágenes
+      final productsToTest = _currentState.products.take(5);
+      
+      for (var product in productsToTest) {
+        final originalUrl = product.imageUrl;
+        final builtUrl = _buildImageUrl(product.imageUrl);
+        final alternatives = ImageService.getAlternativeImageUrls(
+          product.imageUrl, 
+          serverIP: _productService.getCurrentIP()
+        );
+        
+        imageResults['${product.name} (Original)'] = originalUrl.isEmpty ? 'URL vacía' : originalUrl;
+        imageResults['${product.name} (Construida)'] = builtUrl.isEmpty ? 'URL vacía' : builtUrl;
+        imageResults['${product.name} (Alternativas)'] = '${alternatives.length} URLs generadas';
+        
+        // Probar si la URL construida es válida
+        try {
+          final isValid = await ImageService.isImageUrlValid(builtUrl);
+          imageResults['${product.name} (Estado)'] = isValid ? '✅ Válida' : '❌ No válida';
+        } catch (e) {
+          imageResults['${product.name} (Estado)'] = '❓ Error al verificar';
+        }
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop();
+        _showImageTestResults(imageResults);
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop();
+        _showError('Error probando imágenes: $e');
+      }
+    }
+  }
+
+  void _showImageTestResults(Map<String, String> results) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.image_outlined, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('Test de URLs de Imágenes'),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'IP actual del servicio: ${_productService.getCurrentIP() ?? 'No detectada'}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                ...results.entries.map((entry) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          entry.key,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        SelectableText(
+                          entry.value,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: entry.value.startsWith('http') 
+                                ? Colors.blue 
+                                : Colors.red,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ],
+            ),
+          ),
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cerrar'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _retryConnection();
+            },
+            icon: const Icon(Icons.refresh),
+            label: const Text('Reconectar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Diagnóstico mejorado con más información
   Future<void> _showDiagnostic() async {
     showDialog(
@@ -577,37 +723,10 @@ class _ProductScreenState extends State<ProductScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Imagen del producto
-                      if (product.imageUrl.isNotEmpty)
-                        Container(
-                          height: 200,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 10,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Image.network(
-                              product.imageUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Container(
-                                    color: Colors.grey[200],
-                                    child: const Icon(
-                                      Icons.image_not_supported,
-                                      size: 60,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                            ),
-                          ),
-                        ),
+                      ProductDetailImage(
+                        imageUrl: product.imageUrl,
+                        serverIP: _productService.getCurrentIP(),
+                      ),
 
                       const SizedBox(height: 20),
 
@@ -777,8 +896,10 @@ class _ProductScreenState extends State<ProductScreen> {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 32),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 12,
+              runSpacing: 8,
               children: [
                 ElevatedButton.icon(
                   onPressed: _currentState.isRetrying ? null : _retryConnection,
@@ -797,11 +918,15 @@ class _ProductScreenState extends State<ProductScreen> {
                     foregroundColor: Colors.white,
                   ),
                 ),
-                const SizedBox(width: 12),
                 OutlinedButton.icon(
                   onPressed: _showDiagnostic,
                   icon: const Icon(Icons.settings_ethernet),
                   label: const Text('Diagnóstico'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _testImageUrls,
+                  icon: const Icon(Icons.image_outlined),
+                  label: const Text('Test Imágenes'),
                 ),
               ],
             ),
@@ -1292,40 +1417,10 @@ class _ProductScreenState extends State<ProductScreen> {
                 flex: 3,
                 child: Stack(
                   children: [
-                    Container(
-                      width: double.infinity,
-                      decoration: const BoxDecoration(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(16),
-                        ),
-                      ),
-                      child: product.imageUrl.isNotEmpty
-                          ? ClipRRect(
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(16),
-                              ),
-                              child: Image.network(
-                                product.imageUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Container(
-                                      color: Colors.grey[100],
-                                      child: const Icon(
-                                        Icons.image_not_supported,
-                                        size: 40,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                              ),
-                            )
-                          : Container(
-                              color: Colors.grey[100],
-                              child: const Icon(
-                                Icons.image_not_supported,
-                                size: 40,
-                                color: Colors.grey,
-                              ),
-                            ),
+                    ProductCardImage(
+                      imageUrl: product.imageUrl,
+                      serverIP: _productService.getCurrentIP(),
+                      onTap: () => _showProductDetails(product),
                     ),
                     // Botón de agregar al carrito flotante
                     Positioned(
