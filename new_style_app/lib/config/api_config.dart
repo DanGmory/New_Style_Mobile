@@ -1,9 +1,11 @@
 /// Configuración centralizada de URLs y endpoints de la API
+/// Sincronizada con las rutas del backend JavaScript
 class ApiConfig {
   // Host base
   static const String host = "http://localhost:3000";
   
   // ===== ENDPOINTS DE LA API =====
+  // Rutas principales del API (coinciden exactamente con el JavaScript)
   static const String urlAddress = "/api_v1/address";
   static const String urlAddressProfile = "/api_v1/addressProfile";
   static const String urlApiUser = "/api_v1/apiUser";
@@ -25,38 +27,88 @@ class ApiConfig {
   static const String urlTypeProduct = "/api_v1/typeProduct";
   static const String urlUsers = "/api_v1/users";
 
+  // ===== RUTAS PARA DASHBOARDS =====
+  static const String urlDashboardAddress = "/dashboard/address/";
+  static const String urlDashboardAddressProfile = "/dashboard/addressProfile/";
+  static const String urlDashboardApiUser = "/dashboard/apiUser/";
+  static const String urlDashboardBrand = "/dashboard/brand/";
+  static const String urlDashboardCodige = "/dashboard/codige/";
+  static const String urlDashboardColors = "/dashboard/colors/";
+  static const String urlDashboardCompany = "/dashboard/company/";
+  static const String urlDashboardImage = "/dashboard/img/";
+  static const String urlDashboardModule = "/dashboard/module/";
+  static const String urlDashboardOrders = "/dashboard/orders/";
+  static const String urlDashboardProducts = "/dashboard/product/";
+  static const String urlDashboardProfile = "/dashboard/profile/";
+  static const String urlDashboardRole = "/dashboard/role/";
+  static const String urlDashboardRoleModule = "/dashboard/roleModule/";
+  static const String urlDashboardSize = "/dashboard/size/";
+  static const String urlDashboardStateOrder = "/dashboard/stateOrder/";
+  static const String urlDashboardStateUser = "/dashboard/stateUser/";
+  static const String urlDashboardTypeDocument = "/dashboard/typeDocument/";
+  static const String urlDashboardTypeProduct = "/dashboard/typeProduct/";
+  static const String urlDashboardUsers = "/dashboard/users/";
+
+  // ===== RUTAS PARA VISTAS GENERALES =====
+  static const String urlGeneralViewBlogModas = "/generalViews/BlogModas/";
+  static const String urlGeneralViewCamisaAlfilerada = "/generalViews/camisaAlfilerada";
+  static const String urlGeneralViewCamisaAmericana = "/generalViews/camisaAmericana";
+  static const String urlGeneralViewCamisaPasador = "/generalViews/camisaPasador";
+  static const String urlGeneralViewCamisas = "/generalViews/camisas/";
+  static const String urlGeneralViewCarritoCompras = "/generalViews/carritoCompras/";
+  static const String urlGeneralViewElegant = "/generalViews/elegant/";
+  static const String urlGeneralViewHome = "/generalViews/home/";
+  static const String urlGeneralViewLogeado = "/generalViews/logeado/";
+  static const String urlGeneralViewLogin = "/generalViews/login/";
+  static const String urlGeneralViewMaster = "/generalViews/master/";
+  static const String urlGeneralViewPantalonDrill = "/generalViews/PantalonDrill/";
+  static const String urlGeneralViewPantalonGabardina = "/generalViews/pantalonGabardina/";
+  static const String urlGeneralViewPantalonLino = "/generalViews/PantalonLino/";
+  static const String urlGeneralViewPantalones = "/generalViews/pantalones/";
+  static const String urlGeneralViewPasarela = "/generalViews/pasarela/";
+  static const String urlGeneralViewProfile = "/generalViews/profile/";
+  static const String urlGeneralViewRegister = "/generalViews/register/";
+  static const String urlGeneralViewShoptop = "/generalViews/shoptop/";
+  static const String urlGeneralViewAbrigoFormal = "/generalViews/torsoAbrigoFormal/";
+  static const String urlGeneralViewBlazer = "/generalViews/torsoBlazer/";
+  static const String urlGeneralViewGaban = "/generalViews/torsoGaban/";
+  static const String urlGeneralViewTorso = "/generalViews/torso/";
+  static const String urlGeneralViewUserLoged = "/generalViews/userLoged/";
+  static const String urlGeneralViewVisitor = "/generalViews/Visitor/";
+
   // ===== ENDPOINTS DE AUTENTICACIÓN =====
   static const String urlLogin = "/api_v1/users/login";
-  static const String urlRegister = "/api_v1/users/register";
+  static const String urlRegister = "/api_v1/users";  // POST para crear usuario
   
   // ===== URLs COMPLETAS COMÚNMENTE USADAS =====
   static String get baseUrl => host;
   
   // Endpoints específicos para autenticación
   static String get loginEndpoint => "$host$urlLogin";
-  static String get registerEndpoint => "$host$urlRegister";
+  static String get registerEndpoint => "$host$urlRegister";  // POST a /api_v1/users
   static String get usersEndpoint => "$host$urlUsers";
   
   // ===== ENDPOINTS API COMPLETOS =====
-  // Productos
+  // Productos y catálogos
   static String get productsEndpoint => "$host$urlProducts";
+  static String get brandEndpoint => "$host$urlBrand";
+  static String get colorsEndpoint => "$host$urlColors";
+  static String get sizeEndpoint => "$host$urlSize";
+  static String get typeProductEndpoint => "$host$urlTypeProduct";
   
-  // Usuarios y autenticación
+  // Usuarios y perfiles
   static String get profileEndpoint => "$host$urlProfile";
   static String get apiUserEndpoint => "$host$urlApiUser";
   
-  // Órdenes
+  // Órdenes y códigos
   static String get ordersEndpoint => "$host$urlOrders";
+  static String get codigeEndpoint => "$host$urlCodige";
   
   // Direcciones
   static String get addressEndpoint => "$host$urlAddress";
   static String get addressProfileEndpoint => "$host$urlAddressProfile";
   
-  // Catálogos
-  static String get brandEndpoint => "$host$urlBrand";
-  static String get colorsEndpoint => "$host$urlColors";
-  static String get sizeEndpoint => "$host$urlSize";
-  static String get typeProductEndpoint => "$host$urlTypeProduct";
+  // Sistema y administración
   static String get companyEndpoint => "$host$urlCompany";
   static String get imageEndpoint => "$host$urlImage";
   static String get moduleEndpoint => "$host$urlModule";
@@ -65,7 +117,23 @@ class ApiConfig {
   static String get stateOrderEndpoint => "$host$urlStateOrder";
   static String get stateUserEndpoint => "$host$urlStateUser";
   static String get typeDocumentEndpoint => "$host$urlTypeDocument";
-  static String get codigeEndpoint => "$host$urlCodige";
+
+  // ===== ENDPOINTS DE DASHBOARD COMPLETOS =====
+  static String get dashboardAddressEndpoint => "$host$urlDashboardAddress";
+  static String get dashboardBrandEndpoint => "$host$urlDashboardBrand";
+  static String get dashboardProductsEndpoint => "$host$urlDashboardProducts";
+  static String get dashboardProfileEndpoint => "$host$urlDashboardProfile";
+  static String get dashboardUsersEndpoint => "$host$urlDashboardUsers";
+  
+  // ===== ENDPOINTS DE VISTAS GENERALES COMPLETOS =====
+  static String get generalViewHomeEndpoint => "$host$urlGeneralViewHome";
+  static String get generalViewLoginEndpoint => "$host$urlGeneralViewLogin";
+  static String get generalViewRegisterEndpoint => "$host$urlGeneralViewRegister";
+  static String get generalViewProfileEndpoint => "$host$urlGeneralViewProfile";
+  static String get generalViewCarritoEndpoint => "$host$urlGeneralViewCarritoCompras";
+  static String get generalViewProductsEndpoint => "$host$urlGeneralViewTorso";
+  static String get generalViewCamisasEndpoint => "$host$urlGeneralViewCamisas";
+  static String get generalViewPantalonesEndpoint => "$host$urlGeneralViewPantalones";
   
   // Método para obtener URL completa con IP dinámica
   static String getBaseUrlWithIP(String? dynamicIP) {
@@ -83,6 +151,7 @@ class ApiConfig {
   
   // Lista de todas las IPs comunes para fallback
   static const List<String> fallbackIps = [
+    "192.168.1.8",   // Tu IP específica (PRIORIDAD MÁXIMA)
     "192.168.1.100",
     "192.168.1.101", 
     "192.168.1.102",

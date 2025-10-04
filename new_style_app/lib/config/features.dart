@@ -17,7 +17,10 @@ List<FeaturePage> buildFeatures(
     FeaturePage(
       title: 'Inicio',
       icon: Icons.home,
-      page: InicioScreen(onNavigateToProducts: onNavigateToProducts),
+      page: InicioScreen(
+        onNavigateToProducts: onNavigateToProducts,
+        user: user,
+      ),
     ),
     const FeaturePage(
       title: 'Productos',

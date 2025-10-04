@@ -1,406 +1,602 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../widgets/welcome_banner.dart';
+import '../../models/register_model.dart';
 
-class InicioScreen extends StatelessWidget {
+class InicioScreen extends StatefulWidget {
   final VoidCallback? onNavigateToProducts;
+  final ApiUser? user;
 
-  const InicioScreen({super.key, this.onNavigateToProducts});
+  const InicioScreen({
+    super.key, 
+    this.onNavigateToProducts,
+    this.user,
+  });
+
+  @override
+  State<InicioScreen> createState() => _InicioScreenState();
+}
+
+class _InicioScreenState extends State<InicioScreen> 
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+  bool _showWelcomeBanner = true;
+  ApiUser? _currentUser;
+  
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+    
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+    ));
+    
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: const Interval(0.2, 1.0, curve: Curves.easeOutQuart),
+    ));
+    
+    _currentUser = widget.user;
+    _loadWelcomeBannerPreference();
+    _animationController.forward();
+  }
+  
+  Future<void> _loadWelcomeBannerPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    final showBanner = prefs.getBool('show_welcome_banner') ?? true;
+    setState(() {
+      _showWelcomeBanner = showBanner;
+    });
+  }
+  
+  Future<void> _dismissWelcomeBanner() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('show_welcome_banner', false);
+    setState(() {
+      _showWelcomeBanner = false;
+    });
+  }
+  
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Header con logo
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white, width: 2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Column(
-                      children: [
-                        Text(
-                          'NEW STYLE',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 3.0,
-                          ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isDark 
+                ? [Colors.black, const Color(0xFF1A1A1A)]
+                : [const Color(0xFF0A2540), const Color(0xFF1A365D)],
+          ),
+        ),
+        child: AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            return FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 60),
+                      
+                      // Banner de bienvenida (si está habilitado y hay usuario)
+                      if (_showWelcomeBanner && _currentUser != null)
+                        WelcomeBanner(
+                          user: _currentUser!,
+                          onDismiss: _dismissWelcomeBanner,
                         ),
-                        Text(
-                          '•••••••••',
-                          style: TextStyle(color: Colors.white, fontSize: 12),
+                      
+                      // Header mejorado con animación
+                      _buildHeader(theme),
+                      
+                      const SizedBox(height: 40),
+                      
+                      // Dashboard cards con estadísticas
+                      _buildDashboardCards(theme),
+                      
+                      const SizedBox(height: 30),
+                      
+                      // Sección de acceso rápido
+                      _buildQuickActions(theme),
+                      
+                      const SizedBox(height: 30),
+                      
+                      // Carrusel de categorías
+                      _buildCategoriesCarousel(theme),
+                      
+                      const SizedBox(height: 30),
+                      
+                      // Información de la tienda
+                      _buildStoreInfo(theme),
+                      
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildHeader(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        children: [
+          // Logo principal con animación
+          Hero(
+            tag: 'main_logo',
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: theme.primaryColor.withValues(alpha: 0.8), 
+                  width: 2
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.primaryColor.withValues(alpha: 0.3),
+                    blurRadius: 15,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'NEW STYLE',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 4.0,
+                      shadows: [
+                        Shadow(
+                          color: theme.primaryColor.withValues(alpha: 0.5),
+                          blurRadius: 10,
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-
-            // Imagen principal del modelo
-            Container(
-              height: 400,
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                image: const DecorationImage(
-                  image: AssetImage('assets/img/Portada 1.jpg'),
-                  fit: BoxFit.cover,
-                ),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.7),
-                    ],
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        'UN HOMBRE DE',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w300,
-                          letterSpacing: 1.2,
-                          height: 1.3,
-                        ),
-                      ),
-                      Text(
-                        'VERDAD NO MIRA',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w300,
-                          letterSpacing: 1.2,
-                          height: 1.3,
-                        ),
-                      ),
-                      Text(
-                        'EL PRECIO,',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: 1.2,
-                          height: 1.3,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'SOLO VISTE CON',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w300,
-                          letterSpacing: 1.2,
-                          height: 1.3,
-                        ),
-                      ),
-                      Text(
-                        'ESTILO',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 2.0,
-                          height: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Navegar a la página de productos (índice 1 en las features)
-                          _navigateToProducts(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          side: const BorderSide(
-                            color: Colors.white,
-                            width: 1.5,
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 14,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'EXPLORA NUESTRA COLECCIÓN',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Título para el carousel
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
+                  const SizedBox(height: 8),
                   Text(
-                    'COLECCIÓN DESTACADA',
+                    '• FASHION & STYLE •',
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      color: theme.primaryColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                       letterSpacing: 1.5,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-            // Carousel de productos mejorado
-            SizedBox(
-              height: 140,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: [
-                  _buildCarouselItem('assets/img/logos/Logo.png', 'Formal'),
-                  _buildCarouselItem('assets/img/logos/Logo.png', 'Casual'),
-                  _buildCarouselItem('assets/img/logos/Logo.png', 'Sport'),
-                  _buildCarouselItem('assets/img/logos/Logo.png', 'Elegante'),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Sección "Nueva Pasarela de Moda"
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[900],
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  // Imagen pequeña de modelos
-                  Container(
-                    width: 80,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      image: const DecorationImage(
-                        image: NetworkImage(
-                          'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=80&h=100&fit=crop',
-                        ),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Texto
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'NUEVA PASARELA DE MODA',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Una colección de prendas elegantes con un toque moderno que destaca por sus creaciones de tendencia en el mundo de la moda.',
-                          style: TextStyle(color: Colors.grey, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Tres columnas de información
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildInfoColumn(
-                      'El desfile de moda',
-                      'Destaca por su elegancia y pasarela llena de innovaciones y modelos elegantes dirigida a la gente moderna.',
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildInfoColumn(
-                      'La iluminación hacia un futuro',
-                      'Sus prendas diseñadas con un enfoque dirigido a un ambiente juvenil.',
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildInfoColumn(
-                      'El fondo de la esencia de moda',
-                      'Puedes buscar prendas, colores y descuentos únicos bajo su estilo.',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 40),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCarouselItem(String imagePath, String label) {
-    return Container(
-      width: 90,
-      margin: const EdgeInsets.only(right: 16),
-      child: Column(
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(40),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.3),
-                width: 2,
-              ),
-              color: Colors.grey[800],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(38),
-              child: Image.asset(
-                imagePath,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.grey[700]!, Colors.grey[900]!],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.checkroom,
-                      color: Colors.white.withValues(alpha: 0.7),
-                      size: 30,
-                    ),
-                  );
-                },
-              ),
-            ),
           ),
-          const SizedBox(height: 8),
+          
+          const SizedBox(height: 20),
+          
+          // Saludo personalizado
           Text(
-            label,
+            'Bienvenido de vuelta',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.8),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.5,
+              color: Colors.white70,
+              fontSize: 16,
+              fontWeight: FontWeight.w300,
             ),
           ),
         ],
       ),
     );
   }
-
-  Widget _buildInfoColumn(String title, String description) {
+  
+  Widget _buildDashboardCards(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Tu tienda en números',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  theme,
+                  'Productos',
+                  '250+',
+                  Icons.inventory_2_outlined,
+                  theme.primaryColor,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  theme,
+                  'Categorías',
+                  '12',
+                  Icons.category_outlined,
+                  Colors.orange,
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 12),
+          
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  theme,
+                  'Ofertas',
+                  '15',
+                  Icons.local_offer_outlined,
+                  Colors.green,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  theme,
+                  'Nuevos',
+                  '8',
+                  Icons.fiber_new_outlined,
+                  Colors.red,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildStatCard(ThemeData theme, String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: color,
+            size: 28,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            title,
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildQuickActions(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Acceso rápido',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Botón principal de explorar productos
+          Container(
+            width: double.infinity,
+            height: 120,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [theme.primaryColor, theme.primaryColor.withValues(alpha: 0.7)],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.primaryColor.withValues(alpha: 0.3),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _navigateToProducts();
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Explorar Productos',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Descubre nuestra colección completa',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildCategoriesCarousel(ThemeData theme) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Text(
+            'Categorías populares',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          description,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.grey, fontSize: 10),
+        const SizedBox(height: 16),
+        
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              _buildCategoryCard(theme, 'Formal', Icons.business_center_outlined, Colors.blue),
+              _buildCategoryCard(theme, 'Casual', Icons.checkroom_outlined, Colors.green),
+              _buildCategoryCard(theme, 'Sport', Icons.sports_outlined, Colors.orange),
+              _buildCategoryCard(theme, 'Elegante', Icons.star_outline, theme.primaryColor),
+              _buildCategoryCard(theme, 'Accesorios', Icons.watch_outlined, Colors.purple),
+            ],
+          ),
         ),
       ],
     );
   }
-
-  void _navigateToProducts(BuildContext context) {
-    // Si hay callback disponible, usarlo para navegar directamente
-    if (onNavigateToProducts != null) {
-      onNavigateToProducts!();
-      return;
-    }
-
-    // Si no hay callback, mostrar mensaje informativo al usuario
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.shopping_bag_outlined, color: Colors.white),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                'Ve a la pestaña "Productos" para explorar nuestra colección',
-                style: TextStyle(color: Colors.white),
+  
+  Widget _buildCategoryCard(ThemeData theme, String title, IconData icon, Color color) {
+    return Container(
+      width: 100,
+      margin: const EdgeInsets.only(right: 12),
+      child: Column(
+        children: [
+          Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(35),
+              border: Border.all(
+                color: color.withValues(alpha: 0.5),
+                width: 1,
               ),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 30,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildStoreInfo(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.1),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Sobre New Style',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            Row(
+              children: [
+                Expanded(
+                  child: _buildInfoItem(
+                    theme,
+                    Icons.local_shipping_outlined,
+                    'Envío gratis',
+                    'En compras +\$50.000',
+                  ),
+                ),
+                Expanded(
+                  child: _buildInfoItem(
+                    theme,
+                    Icons.verified_user_outlined,
+                    'Garantía',
+                    '30 días para cambios',
+                  ),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 16),
+            
+            Row(
+              children: [
+                Expanded(
+                  child: _buildInfoItem(
+                    theme,
+                    Icons.support_agent_outlined,
+                    'Soporte 24/7',
+                    'Atención personalizada',
+                  ),
+                ),
+                Expanded(
+                  child: _buildInfoItem(
+                    theme,
+                    Icons.payments_outlined,
+                    'Pago seguro',
+                    'Múltiples métodos',
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-        backgroundColor: Colors.blue.shade600,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        duration: const Duration(seconds: 3),
-        action: SnackBarAction(
-          label: '👆 IR',
-          textColor: Colors.white,
-          onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          },
-        ),
       ),
     );
+  }
+  
+  Widget _buildInfoItem(ThemeData theme, IconData icon, String title, String description) {
+    return Column(
+      children: [
+        Icon(
+          icon,
+          color: theme.primaryColor,
+          size: 32,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          title,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          description,
+          style: TextStyle(
+            color: Colors.white70,
+            fontSize: 11,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+  
+  void _navigateToProducts() {
+    if (widget.onNavigateToProducts != null) {
+      widget.onNavigateToProducts!();
+    }
   }
 }

@@ -2,11 +2,17 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:io';
 import '../models/register_model.dart';
+import '../config/api_config.dart';
 
 class RegisterService {
   Dio? _dio;
   String? _dynamicIp;
   bool _isInitialized = false;
+  
+  // Cache para conexiones rápidas
+  static String? _cachedSuccessfulIP;
+  static DateTime? _cacheTimestamp;
+  static const Duration _cacheValidDuration = Duration(minutes: 10);
 
   RegisterService();
 
@@ -60,76 +66,221 @@ class RegisterService {
     _isInitialized = true;
   }
 
-  /// Obtener la URL base con IP dinámica
+  /// Obtener la URL base con detección inteligente de red súper optimizada
   Future<String> _getBaseUrl() async {
     const int port = 3000;
 
-    // Para Flutter Web
+    if (kDebugMode) print('🔍 Iniciando detección inteligente de red para RegisterService...');
+
+    // 1. Para Flutter Web - detección simple pero efectiva
     if (kIsWeb) {
-      final List<String> commonIPs = [
+      final List<String> webIPs = [
+        '192.168.1.8',  // Tu IP específica (PRIORIDAD 1)
         'localhost',
         '127.0.0.1',
         '192.168.1.1',
-        '192.168.1.10', // IP específica del ejemplo
         await _getHostIP() ?? 'localhost',
       ];
 
-      for (String ip in commonIPs) {
-        final testUrl = "http://$ip:$port/api_v1";
-        if (await _testConnection("$testUrl/users", isRegisterEndpoint: true)) {
+      if (kDebugMode) print('🌐 Probando IPs para Web Register: $webIPs');
+
+      for (String ip in webIPs) {
+        final testUrl = "http://$ip:$port";
+        if (kDebugMode) print('🔍 Probando IP Web: $ip');
+        
+        if (await _testConnection("$testUrl${ApiConfig.urlRegister}", isRegisterEndpoint: true)) {
           _dynamicIp = ip;
-          if (kDebugMode) {
-            print('IP dinámica detectada para Register: $ip');
-          }
+          if (kDebugMode) print('✅ IP detectada para Register (Web): $ip usando ${ApiConfig.urlRegister}');
           return testUrl;
         }
       }
 
+      if (kDebugMode) print('⚠️ Ninguna IP funcionó, usando localhost por defecto');
       _dynamicIp = 'localhost';
-      return "http://localhost:$port/api_v1";
+      return "http://localhost:$port";
     }
-    // Para dispositivos móviles
+    
+    // 2. Para dispositivos móviles - SISTEMA INTELIGENTE COMPLETO
     else {
-      try {
-        final String? deviceIP = await _getLocalIP();
-        if (deviceIP != null) {
-          final parts = deviceIP.split('.');
-          if (parts.length >= 3) {
-            final networkBase = '${parts[0]}.${parts[1]}.${parts[2]}';
+      // PASO 1: Verificar cache (conexión instantánea)
+      if (_isCacheValid()) {
+        final cachedUrl = "http://$_cachedSuccessfulIP:$port";
+        if (kDebugMode) print('🚀 Probando IP cacheada: $_cachedSuccessfulIP');
+        
+        final success = await _testConnection(
+          "$cachedUrl${ApiConfig.urlRegister}", 
+          isRegisterEndpoint: true,
+          quickTest: true
+        );
+        
+        if (success) {
+          _dynamicIp = _cachedSuccessfulIP;
+          if (kDebugMode) print('⚡ ÉXITO con IP cacheada para Register: $_cachedSuccessfulIP');
+          return cachedUrl;
+        } else {
+          if (kDebugMode) print('❌ IP cacheada falló, iniciando nueva detección...');
+        }
+      }
 
-            final List<String> ipsToTest = [
-              '$networkBase.1',
-              '$networkBase.10', // IP del ejemplo
-              '$networkBase.2',
-              '$networkBase.100',
-              '$networkBase.101',
-              '10.0.2.2', // Android emulator
-            ];
+      // PASO 2: Detección paralela súper rápida
+      final detectedIP = await _fastParallelIPDetection(port);
+      if (detectedIP != null) {
+        _cacheSuccessfulIP(detectedIP);
+        _dynamicIp = detectedIP;
+        if (kDebugMode) print('🎯 IP detectada por algoritmo paralelo para Register: $detectedIP');
+        return "http://$detectedIP:$port";
+      }
 
-            for (String ip in ipsToTest) {
-              final testUrl = "http://$ip:$port/api_v1";
-              if (await _testConnection(
-                "$testUrl/users",
-                isRegisterEndpoint: true,
-              )) {
-                _dynamicIp = ip;
-                if (kDebugMode) {
-                  print('IP dinámica detectada para Register: $ip');
+      // PASO 3: Fallbacks finales si todo falla
+      final List<String> fallbackIPs = [
+        '192.168.1.8',   // Tu IP específica
+        '10.0.2.2',      // Android emulator
+        '192.168.1.1',   // Router común
+        'localhost',     // Último recurso
+      ];
+
+      for (String ip in fallbackIPs) {
+        final testUrl = "http://$ip:$port";
+        final fullEndpoint = "$testUrl${ApiConfig.urlRegister}";
+        if (kDebugMode) print('🔄 Probando fallback IP: $fullEndpoint');
+        
+        if (await _testConnection(fullEndpoint, isRegisterEndpoint: true)) {
+          _dynamicIp = ip;
+          if (kDebugMode) print('✅ IP fallback exitosa para Register: $ip');
+          return testUrl;
+        }
+      }
+
+      // Último recurso
+      if (kDebugMode) print('⚠️ Usando fallback final para Register: 192.168.1.8');
+      _dynamicIp = '192.168.1.8';
+      return "http://192.168.1.8:$port";
+    }
+  }
+
+  /// Verifica si el cache de IP es válido
+  bool _isCacheValid() {
+    if (_cachedSuccessfulIP == null || _cacheTimestamp == null) return false;
+    return DateTime.now().difference(_cacheTimestamp!) < _cacheValidDuration;
+  }
+
+  /// Cachea una IP exitosa para conexiones futuras
+  void _cacheSuccessfulIP(String ip) {
+    _cachedSuccessfulIP = ip;
+    _cacheTimestamp = DateTime.now();
+    if (kDebugMode) print('📌 IP cacheada para Register: $ip');
+  }
+
+  /// Detección paralela súper rápida de IP del servidor para registro
+  Future<String?> _fastParallelIPDetection(int port) async {
+    try {
+      final List<String> detectedNetworks = await _getDetectedNetworks();
+      
+      if (kDebugMode) print('🌐 Redes detectadas para Register: $detectedNetworks');
+      
+      // Lista de redes comunes para probar (incluye tu red específica)
+      final List<String> networksToTry = [
+        '192.168.1',  // Tu red específica
+        '10.8.217',   // Red que detectó tu dispositivo
+        '192.168.0',  // Red común de routers
+        '10.0.0',     // Red común corporativa
+        ...detectedNetworks, // Agregar redes detectadas automáticamente
+      ];
+      
+      // Eliminar duplicados manteniendo orden
+      final uniqueNetworks = <String>[];
+      for (String network in networksToTry) {
+        if (!uniqueNetworks.contains(network)) {
+          uniqueNetworks.add(network);
+        }
+      }
+      
+      // IPs más probables para cada red (menos IPs para registro, más rápido)
+      final List<String> priorityIPs = [];
+      for (String network in uniqueNetworks) {
+        priorityIPs.addAll([
+          '$network.8',   // Tu PC específica (192.168.1.8)
+          '$network.1',   // Router más común
+          '$network.100', // Rango común para PCs
+          '$network.10',  // Servidor común
+          '$network.2',   // Router alternativo
+        ]);
+      }
+      
+      // Agregar IPs especiales y tu IP específica PRIMERO
+      priorityIPs.insertAll(0, [
+        '192.168.1.8',     // Tu IP específica (PRIMER intento)
+        '10.0.2.2',        // Android emulator
+        '127.0.0.1',       // Localhost
+      ]);
+      
+      if (kDebugMode) print('🚀 Probando ${priorityIPs.length} IPs en paralelo para Register...');
+      
+      // Ejecutar todas las pruebas en paralelo con timeout agresivo
+      final List<Future<String?>> futures = priorityIPs.map((ip) async {
+        try {
+          final testUrl = "http://$ip:$port";
+          final fullEndpoint = "$testUrl${ApiConfig.urlRegister}";
+          if (kDebugMode && ip == '192.168.1.8') debugPrint('🎯 Probando IP prioritaria: $fullEndpoint');
+          
+          final success = await _testConnection(
+            fullEndpoint,
+            isRegisterEndpoint: true,
+            quickTest: true
+          );
+          return success ? ip : null;
+        } catch (e) {
+          return null;
+        }
+      }).toList();
+      
+      // Esperar solo por la primera conexión exitosa
+      final results = await Future.wait(futures);
+      
+      for (String? result in results) {
+        if (result != null) {
+          if (kDebugMode) print('⚡ IP encontrada súper rápido para Register: $result');
+          return result;
+        }
+      }
+      
+      if (kDebugMode) print('❌ No se encontró IP en detección rápida para Register');
+      return null;
+      
+    } catch (e) {
+      if (kDebugMode) print('Error en detección paralela para Register: $e');
+      return null;
+    }
+  }
+
+  /// Detecta automáticamente todas las redes del dispositivo
+  Future<List<String>> _getDetectedNetworks() async {
+    final networks = <String>[];
+    try {
+      if (kIsWeb) return networks;
+
+      final interfaces = await NetworkInterface.list();
+      for (var interface in interfaces) {
+        for (var addr in interface.addresses) {
+          if (addr.type == InternetAddressType.IPv4 && !addr.isLoopback) {
+            final ip = addr.address;
+            if (ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.')) {
+              final parts = ip.split('.');
+              if (parts.length >= 3) {
+                final network = '${parts[0]}.${parts[1]}.${parts[2]}';
+                if (!networks.contains(network)) {
+                  networks.add(network);
+                  if (kDebugMode) print('🔍 Red detectada automáticamente para Register: $network');
                 }
-                return testUrl;
               }
             }
           }
         }
-      } catch (e) {
-        if (kDebugMode) {
-          print('Error obteniendo IP local: $e');
-        }
       }
-
-      _dynamicIp = '10.0.2.2';
-      return "http://10.0.2.2:$port/api_v1";
+    } catch (e) {
+      if (kDebugMode) print('Error detectando redes para Register: $e');
     }
+    return networks;
   }
 
   /// Obtener IP local del dispositivo (solo para móviles)
@@ -178,44 +329,103 @@ class RegisterService {
   Future<bool> _testConnection(
     String url, {
     bool isRegisterEndpoint = false,
+    bool quickTest = false,
   }) async {
     try {
       final testDio = Dio(
         BaseOptions(
-          connectTimeout: const Duration(seconds: 5),
-          receiveTimeout: const Duration(seconds: 5),
+          // Timeouts súper agresivos para quickTest (detección paralela)
+          connectTimeout: quickTest 
+            ? const Duration(milliseconds: 800)
+            : const Duration(seconds: 5),
+          receiveTimeout: quickTest 
+            ? const Duration(milliseconds: 800)
+            : const Duration(seconds: 5),
+          sendTimeout: quickTest 
+            ? const Duration(milliseconds: 800)
+            : const Duration(seconds: 5),
         ),
       );
 
-      // Para endpoints de registro, hacemos un GET al endpoint base
-      final baseUrl = url.replaceAll('/users', '');
-      final response = await testDio.get(baseUrl);
+      // Para endpoints de registro, probamos diferentes estrategias
+      if (isRegisterEndpoint) {
+        if (kDebugMode) print('🧪 Probando endpoint de registro: $url');
+        
+        // Primero intentamos el endpoint de registro completo con POST
+        try {
+          final response = await testDio.post(url, data: {
+            'test': true, // Data mínima para probar endpoint
+            'username': 'test_user',
+            'email': 'test@example.com',
+            'password': 'test123'
+          });
+          if (kDebugMode) print('✅ Registro endpoint respondió: ${response.statusCode}');
+          return response.statusCode != null;
+        } catch (e) {
+          if (e is DioException && e.response != null) {
+            if (kDebugMode) print('✅ Servidor responde con error (válido): ${e.response?.statusCode}');
+            return true; // Servidor responde, aunque sea con error de validación
+          }
+          if (kDebugMode) print('❌ Error de conexión: $e');
+        }
+        
+        // Si falla POST, intentamos GET al endpoint base para verificar que el servidor esté vivo
+        try {
+          final baseUrl = url.replaceAll(ApiConfig.urlRegister, '/api_v1');
+          if (kDebugMode) print('🔍 Probando base API: $baseUrl');
+          final response = await testDio.get(baseUrl);
+          return response.statusCode == 200 || response.statusCode == 404;
+        } catch (e) {
+          if (kDebugMode) print('❌ Base API no responde: $e');
+        }
+      }
+
+      // Para otros endpoints, GET simple
+      final response = await testDio.get(url);
       return response.statusCode == 200 || response.statusCode == 404;
     } catch (e) {
+      if (e is DioException && e.response != null) {
+        return true; // Servidor responde, aunque sea con error
+      }
       return false;
     }
   }
 
-  /// Registro de usuario con manejo de IP dinámica
+  /// Registro de usuario con manejo de IP dinámica inteligente
   Future<ApiUser> registerUser(
     String username,
     String password,
     String email,
   ) async {
-    // Asegurar que el servicio esté inicializado
+    if (kDebugMode) {
+      print('🚀 RegisterService: Iniciando registro de usuario...');
+      print('📧 Email: $email');
+      print('👤 Username: $username');
+    }
+
+    // Asegurar que el servicio esté inicializado con detección inteligente
     if (!_isInitialized || _dio == null) {
+      if (kDebugMode) print('🔄 Inicializando RegisterService...');
       await initialize();
     }
 
+    if (kDebugMode) {
+      if (kDebugMode) {
+        print('🌐 IP detectada para Register: $_dynamicIp');
+        print('🔗 Base URL: ${_dio?.options.baseUrl}');
+      }
+    }
+
     try {
+      if (kDebugMode) print('📡 Enviando POST a: ${ApiConfig.urlRegister}');
+      
       final response = await _dio!.post(
-        '/users',
+        ApiConfig.urlRegister,  // POST a /api_v1/users (endpoint correcto)
         data: {
           "User_name": username,
           "User_mail": email,
           "User_password": password,
-          "User_status": "active",
-          "User_role": "user",
+          // Solo campos esenciales, como en AuthService
         },
       );
 

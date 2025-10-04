@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/appbar.dart';
 import '../../models/register_model.dart'; // 🔹 Importamos ApiUser
+import 'profile.dart'; // 🔹 Importamos la página de perfil
 
 class UserScreen extends StatelessWidget {
   final ApiUser user;
@@ -46,11 +47,17 @@ class UserScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
+            ElevatedButton.icon(
               onPressed: () {
-                // Aquí iría navegación a pantalla de edición de perfil
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProfilePage(),
+                  ),
+                );
               },
-              child: const Text('Editar Perfil'),
+              icon: const Icon(Icons.person_outline),
+              label: const Text('Ver Perfil Completo'),
             ),
           ],
         ),

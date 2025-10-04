@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import '../models/register_model.dart';
 import '../config/api_config.dart';
@@ -154,7 +155,7 @@ class AuthService {
                 networks.add(networkBase);
                 
                 if (kDebugMode) {
-                  print('🌐 Red detectada: $networkBase (desde $ip en ${interface.name})');
+                  print('Red detectada: $networkBase (desde $ip en ${interface.name})');
                 }
               }
             }
@@ -240,7 +241,7 @@ class AuthService {
       allNetworks.addAll(fallbackNetworks);
       
       if (kDebugMode) {
-        print('🌐 Probando ${allNetworks.length} redes: ${allNetworks.toList()}');
+        if (kDebugMode) print('🌐 Probando ${allNetworks.length} redes: ${allNetworks.toList()}');
       }
       
       // 🎯 IPs más probables para servidores de desarrollo
@@ -386,7 +387,10 @@ class AuthService {
       if (response.statusCode == 200 && response.data != null) {
         final ApiUser user = ApiUser.fromJson(response.data);
         
-        // 🚀 CACHEAR IP EXITOSA para conexiones futuras súper rápidas
+        // � GUARDAR INFORMACIÓN DE SESIÓN para otros servicios
+        await _saveUserSession(user, email);
+        
+        // �🚀 CACHEAR IP EXITOSA para conexiones futuras súper rápidas
         if (_dynamicIp != null) {
           _cacheSuccessfulIP(_dynamicIp!);
         }
@@ -462,6 +466,10 @@ class AuthService {
           }
 
           final ApiUser user = ApiUser.fromJson(response.data);
+          
+          // 💾 GUARDAR INFORMACIÓN DE SESIÓN para otros servicios
+          await _saveUserSession(user, email);
+          
           return user;
         }
       } catch (e) {
@@ -654,5 +662,84 @@ class AuthService {
     }
 
     throw Exception("No se pudo conectar con el servidor para registro");
+  }
+
+  /// Guardar información de sesión en SharedPreferences
+  Future<void> _saveUserSession(ApiUser user, String email) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Verificar que tenemos datos válidos antes de guardar
+      if (user.id <= 0) {
+        if (kDebugMode) {
+          print('❌ ADVERTENCIA: Intentando guardar usuario con ID inválido: ${user.id}');
+          print('   Datos del usuario: ID=${user.id}, Name=${user.name}, Email=${user.email}');
+        }
+      }
+      
+      // Guardar información básica del usuario
+      await prefs.setString('currentUserId', user.id.toString());
+      await prefs.setString('currentUserEmail', email);
+      await prefs.setString('currentUserName', user.name);
+      
+      // Guardar información adicional si está disponible
+      if (user.token.isNotEmpty) {
+        await prefs.setString('userToken', user.token);
+      }
+      
+      // Verificar que se guardó correctamente
+      final savedId = prefs.getString('currentUserId');
+      final savedEmail = prefs.getString('currentUserEmail');
+      
+      if (kDebugMode) {
+        print('💾 Sesión guardada correctamente:');
+        print('   ID: $savedId (original: ${user.id})');
+        print('   Email: $savedEmail (original: $email)');
+        print('   Name: ${user.name}');
+      }
+      
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error guardando sesión: $e');
+      }
+      // No lanzamos excepción para no interrumpir el login
+    }
+  }
+
+  /// Limpiar información de sesión
+  Future<void> clearUserSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('currentUserId');
+      await prefs.remove('currentUserEmail'); 
+      await prefs.remove('currentUserName');
+      await prefs.remove('userToken');
+      
+      if (kDebugMode) {
+        print('🗑️ Sesión limpiada');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error limpiando sesión: $e');
+      }
+    }
+  }
+
+  /// Obtener información de sesión actual
+  Future<Map<String, String?>> getCurrentSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return {
+        'userId': prefs.getString('currentUserId'),
+        'userEmail': prefs.getString('currentUserEmail'),
+        'userName': prefs.getString('currentUserName'),
+        'userToken': prefs.getString('userToken'),
+      };
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error obteniendo sesión: $e');
+      }
+      return {};
+    }
   }
 }
