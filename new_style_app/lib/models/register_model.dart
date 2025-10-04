@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class ApiUser {
   final int id;
   final String name;
@@ -16,16 +18,27 @@ class ApiUser {
   });
 
   factory ApiUser.fromJson(Map<String, dynamic> json) {
-    // Ajustamos: el backend devuelve "data"
-    final user = json['data'] ?? json['user'] ?? {};
+    // Ajustamos: el backend puede devolver "data", "user" o directamente los campos
+    final user = json['data'] ?? json['user'] ?? json;
+    
+    // Debug: Solo en modo debug
+    if (kDebugMode) {
+      print('🔍 ApiUser.fromJson recibió: $json');
+      print('🔍 Usuario extraído: $user');
+    }
+
+    final userId = user['User_id'] ?? user['id'] ?? 0;
+    if (kDebugMode) {
+      print('🔍 ID de usuario extraído: $userId');
+    }
 
     return ApiUser(
-      id: user['User_id'] ?? 0,
-      name: user['User_name'] ?? '',
-      email: user['User_mail'] ?? '',
-      role: user['Role_fk'] ?? 0,
-      state: user['State_user_fk'] ?? 0,
-      token: json['token'] ?? '',
+      id: userId,
+      name: user['User_name'] ?? user['name'] ?? '',
+      email: user['User_mail'] ?? user['email'] ?? '',
+      role: user['Role_fk'] ?? user['role'] ?? 0,
+      state: user['State_user_fk'] ?? user['state'] ?? 1,
+      token: json['token'] ?? user['token'] ?? '',
     );
   }
 }

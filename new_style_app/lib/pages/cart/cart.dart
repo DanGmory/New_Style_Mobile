@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 import '../../services/cart_service.dart';
 import '../../models/cart_item.dart';
 import '../../widgets/appbar.dart';
 import '../../services/logger_service.dart';
+import '../checkout/simple_thank_you_screen.dart';
 
 class CartScreen extends StatefulWidget {
   final VoidCallback? onBackPressed;
@@ -393,17 +395,23 @@ class _CartScreenState extends State<CartScreen> {
 
     if (confirmed == true) {
       try {
-        // Aquí iría la lógica de procesamiento del pedido
+        // Generar número de orden único
+        final orderNumber = 'NSM${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}${Random().nextInt(99)}';
+        final totalAmount = _totalPrice * 1.19;
+        
+        // Procesar el pedido y limpiar el carrito
         await _cartService.clearCart();
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('¡Pedido realizado exitosamente!'),
-              backgroundColor: Colors.green,
+          // Navegar a la pantalla de agradecimiento
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => SimpleThankYouScreen(
+                orderNumber: orderNumber,
+                totalAmount: totalAmount,
+              ),
             ),
           );
-          Navigator.of(context).pop();
         }
       } catch (e) {
         if (mounted) {
