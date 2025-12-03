@@ -8,8 +8,9 @@ import '../../models/register_model.dart';
 
 class LoginScreen extends StatefulWidget {
   final ThemeService themeService;
+  final Function(ApiUser)? onLoginSuccess;
 
-  const LoginScreen({super.key, required this.themeService});
+  const LoginScreen({super.key, required this.themeService, this.onLoginSuccess});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -54,13 +55,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (!mounted) return;
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                HomeScreen(user: user, themeService: widget.themeService),
-          ),
-        );
+        // Si se pasó un callback, llamarlo y volver
+        if (widget.onLoginSuccess != null) {
+          widget.onLoginSuccess!(user);
+          if (mounted) Navigator.pop(context);
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  HomeScreen(user: user, themeService: widget.themeService),
+            ),
+          );
+        }
       } catch (e) {
         if (!mounted) return;
         //  Mostramos solo el mensaje sin "Exception: ..."

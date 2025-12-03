@@ -1,128 +1,95 @@
 import 'package:flutter/material.dart';
-import '../../widgets/under_development.dart';
+import '/pages/home/inicio.dart';
+import '/pages/products/products.dart';
+import '/pages/cart/cart.dart';
+import '/pages/user/user.dart';
+import '/pages/settings/settings.dart';
+import '/services/theme_service.dart';
+import '/models/register_model.dart';
+import '/models/features_page.dart';
 
-// Página de Favoritos
-class FavoritesPage extends StatelessWidget {
-  const FavoritesPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const UnderDevelopmentPage(
-      featureName: 'Favoritos',
-      icon: Icons.favorite_outlined,
-      description: 'Guarda y gestiona tus productos favoritos para encontrarlos fácilmente.',
-      features: [
-        'Lista de productos favoritos',
-        'Filtros y búsqueda avanzada',
-        'Notificaciones de precio',
-        'Compartir favoritos',
-        'Sincronización en la nube',
-      ],
-    );
+// MODIFICADO: Ahora acepta ApiUser nullable
+List<FeaturePage> buildFeatures(
+  ApiUser? user, {
+  VoidCallback? onNavigateToProducts,
+  required ThemeService themeService,
+}) {
+  // Si NO hay usuario (invitado), retornar solo las features públicas
+  if (user == null) {
+    return [
+      FeaturePage(
+        title: 'Inicio',
+        icon: Icons.home,
+        page: InicioScreen(
+          onNavigateToProducts: onNavigateToProducts,
+          user: null, // Pasar null explícitamente
+        ),
+      ),
+      const FeaturePage(
+        title: 'Productos',
+        icon: Icons.shopping_bag,
+        page: ProductScreen(),
+      ),
+      // NOTA: Carrito, Perfil y otras páginas protegidas NO se incluyen
+      // Esto evita que aparezcan en el BottomNavigationBar para invitados
+      
+      // Configuración es accesible para todos
+      FeaturePage(
+        title: 'Configuración',
+        icon: Icons.settings,
+        page: SettingsScreen(themeService: themeService),
+      ),
+    ];
   }
+
+  // Si HAY usuario, retornar todas las features
+  return [
+    FeaturePage(
+      title: 'Inicio',
+      icon: Icons.home,
+      page: InicioScreen(
+        onNavigateToProducts: onNavigateToProducts,
+        user: user,
+      ),
+    ),
+    const FeaturePage(
+      title: 'Productos',
+      icon: Icons.shopping_bag,
+      page: ProductScreen(),
+    ),
+    const FeaturePage(
+      title: 'Carrito',
+      icon: Icons.shopping_cart,
+      page: CartScreen(),
+    ),
+    FeaturePage(
+      title: 'Mi Perfil',
+      icon: Icons.person,
+      page: UserScreen(user: user),
+    ),
+    FeaturePage(
+      title: 'Configuración',
+      icon: Icons.settings,
+      page: SettingsScreen(themeService: themeService),
+    ),
+  ];
 }
 
-// Página de Lista de Deseos
-class WishlistPage extends StatelessWidget {
-  const WishlistPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const UnderDevelopmentPage(
-      featureName: 'Lista de Deseos',
-      icon: Icons.bookmark_outlined,
-      description: 'Crea listas personalizadas de productos que deseas comprar en el futuro.',
-      features: [
-        'Múltiples listas temáticas',
-        'Recordatorios de disponibilidad',
-        'Comparación de precios',
-        'Compartir listas con amigos',
-        'Sugerencias inteligentes',
-      ],
-    );
-  }
+// NUEVO: Helper para obtener el índice del carrito según el estado
+int getCartPageIndex(bool isLoggedIn) {
+  return isLoggedIn ? 2 : -1; // -1 significa "no disponible"
 }
 
-// Página de Reseñas
-class ReviewsPage extends StatelessWidget {
-  const ReviewsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const UnderDevelopmentPage(
-      featureName: 'Mis Reseñas',
-      icon: Icons.rate_review_outlined,
-      description: 'Escribe y gestiona tus opiniones sobre los productos que has comprado.',
-      features: [
-        'Calificación con estrellas',
-        'Fotos en reseñas',
-        'Historial de reseñas',
-        'Respuestas del vendedor',
-        'Reseñas verificadas',
-      ],
-    );
-  }
+// NUEVO: Helper para obtener el índice del perfil
+int getProfilePageIndex(bool isLoggedIn) {
+  return isLoggedIn ? 3 : -1;
 }
 
-// Página de Ofertas
-class OffersPage extends StatelessWidget {
-  const OffersPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const UnderDevelopmentPage(
-      featureName: 'Ofertas Especiales',
-      icon: Icons.local_offer_outlined,
-      description: 'Descubre las mejores ofertas, descuentos y promociones exclusivas.',
-      features: [
-        'Ofertas diarias',
-        'Descuentos por tiempo limitado',
-        'Cupones personalizados',
-        'Alertas de ofertas',
-        'Programa de fidelidad',
-      ],
-    );
+// NUEVO: Helper para verificar si una página requiere login
+bool pageRequiresLogin(int pageIndex, bool isLoggedIn) {
+  if (!isLoggedIn) {
+    // Para invitados, solo página 0 (inicio) y 1 (productos) son accesibles
+    return pageIndex > 1;
   }
-}
-
-// Página de Soporte
-class SupportPage extends StatelessWidget {
-  const SupportPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const UnderDevelopmentPage(
-      featureName: 'Soporte al Cliente',
-      icon: Icons.support_agent_outlined,
-      description: 'Obtén ayuda personalizada y resuelve tus dudas con nuestro equipo de soporte.',
-      features: [
-        'Chat en vivo 24/7',
-        'Centro de ayuda',
-        'Preguntas frecuentes',
-        'Tickets de soporte',
-        'Videollamadas de asistencia',
-      ],
-    );
-  }
-}
-
-// Página de Notificaciones
-class NotificationsPage extends StatelessWidget {
-  const NotificationsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const UnderDevelopmentPage(
-      featureName: 'Centro de Notificaciones',
-      icon: Icons.notifications_outlined,
-      description: 'Gestiona todas tus notificaciones y mantente al día con las novedades.',
-      features: [
-        'Notificaciones push',
-        'Historial completo',
-        'Configuración personalizada',
-        'Categorías de notificaciones',
-        'Modo no molestar',
-      ],
-    );
-  }
+  return false;
 }
