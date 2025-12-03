@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../../widgets/appbar.dart';
 import '../../widgets/sidebar.dart';
 import '../auth/login.dart';
@@ -11,10 +13,14 @@ import '../../services/logger_service.dart';
 import '../../services/theme_service.dart';
 
 class HomeScreen extends StatefulWidget {
-  final ApiUser user;
+  final ApiUser? user; // CAMBIO: Ahora puede ser null
   final ThemeService themeService;
 
-  const HomeScreen({super.key, required this.user, required this.themeService});
+  const HomeScreen({
+    super.key, 
+    this.user, // CAMBIO: Ya no es required
+    required this.themeService
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -29,6 +35,9 @@ class _HomeScreenState extends State<HomeScreen>
   final CartService _cartService = CartService();
   int _cartItemCount = 0;
   
+  // NUEVO: Variable para el usuario actual (puede cambiar después del login)
+  ApiUser? _currentUser;
+  
   // Controladores de animación
   late AnimationController _fabAnimationController;
   late AnimationController _pageAnimationController;
@@ -37,9 +46,18 @@ class _HomeScreenState extends State<HomeScreen>
 
   late List<FeaturePage> _features;
 
+  // NUEVO: Getter para saber si está logueado
+  bool get isLoggedIn => _currentUser != null;
+
   @override
   void initState() {
     super.initState();
+    
+    // NUEVO: Inicializar usuario actual
+    _currentUser = widget.user;
+    
+    // NUEVO: Verificar sesión guardada si no hay usuario
+    _checkStoredSession();
     
     // Inicializar controladores de animación
     _fabAnimationController = AnimationController(
@@ -69,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen>
     ));
     
     _features = buildFeatures(
-      widget.user,
+      _currentUser, // CAMBIO: Usar _currentUser en lugar de widget.user
       onNavigateToProducts: _navigateToProductsPage,
       themeService: widget.themeService,
     );
@@ -79,6 +97,42 @@ class _HomeScreenState extends State<HomeScreen>
     // Iniciar animaciones
     _fabAnimationController.forward();
     _pageAnimationController.forward();
+  }
+
+  // NUEVO: Método para verificar sesión guardada
+  Future<void> _checkStoredSession() async {
+    if (_currentUser == null) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final userJson = prefs.getString('user_session');
+        
+        if (userJson != null && mounted) {
+          final userMap = json.decode(userJson) as Map<String, dynamic>;
+          final user = ApiUser.fromJson(userMap);
+          
+          setState(() {
+            _currentUser = user;
+          });
+          
+          // Recargar features con el usuario
+          _features = buildFeatures(
+            _currentUser,
+            onNavigateToProducts: _navigateToProductsPage,
+            themeService: widget.themeService,
+          );
+          
+          // Migrar carrito local si existe
+          await _cartService.migrateCartForUser(_currentUser!.id.toString());
+          
+          // Recargar contador del carrito
+          _loadCartItemCount();
+          
+          LoggerService.info('Sesión restaurada: ${user.name}');
+        }
+      } catch (e) {
+        LoggerService.error('Error cargando sesión guardada', e);
+      }
+    }
   }
 
   @override
@@ -170,6 +224,13 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _onDrawerItemSelected(int index) {
+    // NUEVO: Verificar si requiere login
+    if (!isLoggedIn && _requiresLogin(index)) {
+      _scaffoldKey.currentState?.closeDrawer();
+      _showLoginRequiredDialog();
+      return;
+    }
+    
     _pageAnimationController.reset();
     setState(() {
       _currentIndex = index;
@@ -183,14 +244,127 @@ class _HomeScreenState extends State<HomeScreen>
     _scaffoldKey.currentState?.closeDrawer();
   }
 
-  void _logout() {
-    Navigator.pushAndRemoveUntil(
+  // NUEVO: Verificar si una página requiere login
+  bool _requiresLogin(int index) {
+    // Índice 2 = Carrito
+    // Índice 3 = Perfil (si existe)
+    // Índice 4 = Pedidos (si existe)
+    return index == 2 || index == 3 || index == 4;
+  }
+
+  // NUEVO: Mostrar diálogo de login requerido
+  void _showLoginRequiredDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.lock_outline, color: Theme.of(context).primaryColor),
+            const SizedBox(width: 12),
+            const Text('Inicio de sesión requerido'),
+          ],
+        ),
+        content: const Text(
+          'Necesitas iniciar sesión para acceder a esta función.\n\n'
+          '¿Deseas iniciar sesión ahora?'
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Más tarde'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _goToLogin();
+            },
+            child: const Text('Iniciar sesión'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // NUEVO: Navegar al login
+  void _goToLogin() {
+    Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => LoginScreen(themeService: widget.themeService),
+        builder: (context) => LoginScreen(
+          themeService: widget.themeService,
+            onLoginSuccess: (user) async {
+            // Guardar sesión
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('user_session', json.encode(user.toJson()));
+            
+            setState(() {
+              _currentUser = user;
+            });
+            
+            // Recargar features
+            _features = buildFeatures(
+              _currentUser,
+              onNavigateToProducts: _navigateToProductsPage,
+              themeService: widget.themeService,
+            );
+            
+            // Migrar carrito local al servidor
+              await _cartService.migrateCartForUser(user.id.toString());
+            
+            // Recargar contador del carrito
+            _loadCartItemCount();
+            
+            LoggerService.info('Login exitoso: ${user.name}');
+          },
+        ),
       ),
-      (route) => false,
     );
+  }
+
+  // MODIFICADO: Logout mejorado
+  void _logout() async {
+    try {
+      // Limpiar sesión guardada
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('user_session');
+      
+      // Limpiar carrito (opcional, dependiendo de tu lógica)
+      // await _cartService.clearCart();
+      
+      setState(() {
+        _currentUser = null;
+        _cartItemCount = 0;
+      });
+      
+      // Recargar features sin usuario
+      _features = buildFeatures(
+        null,
+        onNavigateToProducts: _navigateToProductsPage,
+        themeService: widget.themeService,
+      );
+      
+      // Mostrar confirmación
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sesión cerrada correctamente'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      
+      // Si está en una página que requiere login, ir a inicio
+      if (_requiresLogin(_currentIndex)) {
+        setState(() {
+          _currentIndex = 0;
+        });
+        _pageController.jumpToPage(0);
+      }
+      
+      LoggerService.info('Sesión cerrada - Modo invitado activado');
+    } catch (e) {
+      LoggerService.error('Error cerrando sesión', e);
+    }
   }
 
   Future<bool> _onWillPop() async {
@@ -229,12 +403,14 @@ class _HomeScreenState extends State<HomeScreen>
           onMenuPressed: () => _scaffoldKey.currentState?.openDrawer(),
         ),
         drawer: CustomDrawer(
-          username: widget.user.name,
+          username: _currentUser?.name ?? 'Invitado', // CAMBIO: Mostrar "Invitado" si no hay usuario
           onItemSelected: _onDrawerItemSelected,
           onLogout: _logout,
+          onLogin: _goToLogin, // NUEVO: Callback para login
           currentIndex: _currentIndex,
-          user: widget.user,
+          user: _currentUser, // CAMBIO: Usar _currentUser
           themeService: widget.themeService,
+          isLoggedIn: isLoggedIn, // NUEVO: Pasar estado de login
         ),
         body: SlideTransition(
           position: _pageSlideAnimation,
@@ -242,6 +418,16 @@ class _HomeScreenState extends State<HomeScreen>
             controller: _pageController,
             children: _features.map((feature) => feature.page).toList(),
             onPageChanged: (index) {
+              // NUEVO: Verificar si requiere login
+              if (!isLoggedIn && _requiresLogin(index)) {
+                // Volver a la página anterior
+                Future.microtask(() {
+                  _pageController.jumpToPage(_currentIndex);
+                  _showLoginRequiredDialog();
+                });
+                return;
+              }
+              
               _pageAnimationController.reset();
               setState(() {
                 _currentIndex = index;
@@ -266,6 +452,12 @@ class _HomeScreenState extends State<HomeScreen>
           child: BottomNavigationBar(
             currentIndex: _currentIndex,
             onTap: (index) {
+              // NUEVO: Si intenta acceder al carrito sin login
+              if (!isLoggedIn && _requiresLogin(index)) {
+                _showLoginRequiredDialog();
+                return;
+              }
+              
               // Animación de feedback
               _fabAnimationController.reverse().then((_) {
                 _fabAnimationController.forward();
@@ -295,11 +487,11 @@ class _HomeScreenState extends State<HomeScreen>
             type: BottomNavigationBarType.fixed,
             backgroundColor: theme.scaffoldBackgroundColor,
             elevation: 0,
-            selectedLabelStyle: TextStyle(
+            selectedLabelStyle: const TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 12,
             ),
-            unselectedLabelStyle: TextStyle(
+            unselectedLabelStyle: const TextStyle(
               fontWeight: FontWeight.w400,
               fontSize: 11,
             ),
@@ -311,9 +503,31 @@ class _HomeScreenState extends State<HomeScreen>
               // Si es el carrito (índice 2), usar el ícono con badge
               if (index == 2 && feature.icon == Icons.shopping_cart) {
                 return BottomNavigationBarItem(
-                  icon: ScaleTransition(
-                    scale: _fabScaleAnimation,
-                    child: _buildCartIcon(),
+                  icon: Stack(
+                    children: [
+                      ScaleTransition(
+                        scale: _fabScaleAnimation,
+                        child: _buildCartIcon(),
+                      ),
+                      // NUEVO: Mostrar candado si no está logueado
+                      if (!isLoggedIn)
+                        Positioned(
+                          right: -2,
+                          bottom: -2,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.error,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.lock,
+                              size: 10,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   label: feature.title,
                 );
@@ -351,11 +565,14 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  // MODIFICADO: Título dinámico según login
   String _getTitle() {
     if (_currentIndex < _features.length) {
       return _features[_currentIndex].title;
     }
-    return 'Bienvenido, ${widget.user.name}';
+    return isLoggedIn 
+        ? 'Bienvenido, ${_currentUser!.name}' 
+        : 'Bienvenido, Invitado';
   }
   
   IconData _getSelectedIcon(IconData defaultIcon) {

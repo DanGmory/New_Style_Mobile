@@ -41,4 +41,15 @@ class ApiUser {
       token: json['token'] ?? user['token'] ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'role': role,
+      'state': state,
+      'token': token,
+    };
+  }
 }
