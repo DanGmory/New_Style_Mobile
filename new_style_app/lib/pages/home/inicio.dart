@@ -547,14 +547,6 @@ class _InicioScreenState extends State<InicioScreen>
                     'Atención personalizada',
                   ),
                 ),
-                Expanded(
-                  child: _buildInfoItem(
-                    theme,
-                    Icons.payments_outlined,
-                    'Pago seguro',
-                    'Múltiples métodos',
-                  ),
-                ),
               ],
             ),
           ],

@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
+import '../config/api_config.dart';
+import 'dart:core';
 
 /// Servicio dedicado para el manejo de imágenes de productos
 class ImageService {
@@ -18,7 +20,9 @@ class ImageService {
     }
     
     // Determinar IP del servidor
-    final ip = serverIP ?? '192.168.1.8';
+    // Preferir la configuración centralizada del host en ApiConfig
+    final configuredHost = ApiConfig.host.replaceFirst(RegExp(r'^https?://'), '');
+    final ip = serverIP ?? configuredHost.split(':').first;
     final baseUrl = 'http://$ip:3000';
     
     // Si la imagen empieza con '/', agregarla directamente
@@ -27,13 +31,14 @@ class ImageService {
     }
     
     // Construir diferentes rutas posibles
+    final encoded = Uri.encodeFull(imageUrl);
     final possiblePaths = [
-      '$baseUrl/assets/img/$imageUrl',
-      '$baseUrl/assets/img/products/$imageUrl',
-      '$baseUrl/public/img/$imageUrl',
-      '$baseUrl/public/assets/img/$imageUrl',
-      '$baseUrl/uploads/$imageUrl',
-      '$baseUrl/static/img/$imageUrl',
+      '$baseUrl/assets/img/$encoded',
+      '$baseUrl/assets/img/products/$encoded',
+      '$baseUrl/public/img/$encoded',
+      '$baseUrl/public/assets/img/$encoded',
+      '$baseUrl/uploads/$encoded',
+      '$baseUrl/static/img/$encoded',
     ];
     
     // En desarrollo, mostrar las rutas que estamos intentando
@@ -49,7 +54,7 @@ class ImageService {
   
   /// Verificar si una URL de imagen es válida
   static Future<bool> isImageUrlValid(String url) async {
-    if (url.isEmpty || !url.startsWith('http')) {
+    if (url.isEmpty || !(url.startsWith('http://') || url.startsWith('https://'))) {
       return false;
     }
     
@@ -77,18 +82,24 @@ class ImageService {
     if (imageUrl.isEmpty) {
       return [fallbackImageUrl];
     }
-    
-    final ip = serverIP ?? '192.168.1.8';
+
+    final configuredHost = ApiConfig.host.replaceFirst(RegExp(r'^https?://'), '');
+    final ip = serverIP ?? configuredHost.split(':').first;
     final baseUrl = 'http://$ip:3000';
-    
+
     final alternatives = <String>[];
-    
+
+    // Si la ruta es un asset local, devolverlo como tal (handled by widgets)
+    if (imageUrl.startsWith('assets/')) {
+      return [imageUrl, fallbackImageUrl];
+    }
+
     // Si ya es una URL completa, agregarla primera
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       alternatives.add(imageUrl);
     }
-    
-    // Generar múltiples rutas posibles
+
+    // Generar múltiples rutas posibles codificando espacios y caracteres
     final paths = [
       '/assets/img/',
       '/assets/img/products/',
@@ -99,18 +110,20 @@ class ImageService {
       '/images/',
       '/img/',
     ];
-    
+
+    final encoded = Uri.encodeFull(imageUrl);
+
     for (String path in paths) {
       if (imageUrl.startsWith('/')) {
-        alternatives.add('$baseUrl$imageUrl');
+        alternatives.add('$baseUrl${Uri.encodeFull(imageUrl)}');
       } else {
-        alternatives.add('$baseUrl$path$imageUrl');
+        alternatives.add('$baseUrl$path$encoded');
       }
     }
-    
+
     // Agregar imagen de fallback al final
     alternatives.add(fallbackImageUrl);
-    
+
     return alternatives;
   }
   
