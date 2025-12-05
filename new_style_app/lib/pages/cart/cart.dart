@@ -138,21 +138,7 @@ class _CartScreenState extends State<CartScreen> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: item.imageUrl.startsWith('http')
-                  ? Image.network(
-                      item.imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return _buildImagePlaceholder();
-                      },
-                    )
-                  : Image.asset(
-                      item.imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return _buildImagePlaceholder();
-                      },
-                    ),
+              child: _buildProductImage(item.imageUrl),
             ),
           ),
           const SizedBox(width: 16),
@@ -260,6 +246,53 @@ class _CartScreenState extends State<CartScreen> {
       ),
       child: const Icon(Icons.checkroom, color: Colors.white54, size: 40),
     );
+  }
+
+  Widget _buildProductImage(String imageUrl) {
+    if (imageUrl.isEmpty) {
+      return _buildImagePlaceholder();
+    }
+
+    // Asset local incluido en el paquete
+    if (imageUrl.startsWith('assets/')) {
+      return Image.asset(
+        imageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildImagePlaceholder(),
+      );
+    }
+
+    // URL remota
+    final lower = imageUrl.toLowerCase();
+    if (lower.startsWith('http://') || lower.startsWith('https://')) {
+      return Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildImagePlaceholder(),
+      );
+    }
+
+    // Podría ser un filename almacenado (ej: "portada.jpg"). Intentar tratarlo como asset relativo.
+    if (!imageUrl.contains('/')) {
+      final assetPath = 'assets/img/$imageUrl';
+      return Image.asset(
+        assetPath,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildImagePlaceholder(),
+      );
+    }
+
+    // Fallback a network intentando codificar espacios
+    final encoded = Uri.encodeFull(imageUrl);
+    if (encoded.startsWith('http')) {
+      return Image.network(
+        encoded,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildImagePlaceholder(),
+      );
+    }
+
+    return _buildImagePlaceholder();
   }
 
   Widget _buildCartSummary() {

@@ -2,7 +2,7 @@
 /// Sincronizada con las rutas del backend JavaScript
 class ApiConfig {
   // Host base
-  static const String host = "http://localhost:3000";
+  static const String host = "http://192.168.1.14:3000";
   
   // ===== ENDPOINTS DE LA API =====
   // Rutas principales del API (coinciden exactamente con el JavaScript)
@@ -151,7 +151,7 @@ class ApiConfig {
   
   // Lista de todas las IPs comunes para fallback
   static const List<String> fallbackIps = [
-    "192.168.1.8",   // Tu IP específica (PRIORIDAD MÁXIMA)
+    "192.168.1.14",   // Tu IP específica (PRIORIDAD MÁXIMA)
     "192.168.1.100",
     "192.168.1.101", 
     "192.168.1.102",

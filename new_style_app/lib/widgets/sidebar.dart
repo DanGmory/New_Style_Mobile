@@ -158,18 +158,6 @@ class CustomDrawer extends StatelessWidget {
 
         const Divider(),
 
-        // Elementos especiales (siempre visibles)
-        _buildListTile(
-          theme,
-          Icons.notifications,
-          'Notificaciones',
-          -1,
-          false,
-        ),
-        _buildListTile(theme, Icons.help, 'Ayuda', -2, false),
-        _buildListTile(theme, Icons.info, 'Acerca de', -3, false),
-        
-        const Divider(),
         
         // NUEVO: Botón de login o logout según estado
         if (isLoggedIn)
