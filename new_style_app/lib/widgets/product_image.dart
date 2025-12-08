@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../services/image_service.dart';
 
 /// Widget especializado para mostrar imágenes de productos con fallbacks automáticos
 class ProductImage extends StatefulWidget {
   final String imageUrl;
-  final String? serverIP;
   final double? width;
   final double? height;
   final BoxFit fit;
@@ -16,7 +16,6 @@ class ProductImage extends StatefulWidget {
   const ProductImage({
     super.key,
     required this.imageUrl,
-    this.serverIP,
     this.width,
     this.height,
     this.fit = BoxFit.cover,
@@ -38,22 +37,15 @@ class _ProductImageState extends State<ProductImage> {
   @override
   void initState() {
     super.initState();
-    _imageUrls = ImageService.getAlternativeImageUrls(
-      widget.imageUrl,
-      serverIP: widget.serverIP,
-    );
+    _imageUrls = ImageService.getAlternativeImageUrls(widget.imageUrl);
     _loadImage();
   }
 
   @override
   void didUpdateWidget(ProductImage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.imageUrl != widget.imageUrl || 
-        oldWidget.serverIP != widget.serverIP) {
-      _imageUrls = ImageService.getAlternativeImageUrls(
-        widget.imageUrl,
-        serverIP: widget.serverIP,
-      );
+    if (oldWidget.imageUrl != widget.imageUrl) {
+      _imageUrls = ImageService.getAlternativeImageUrls(widget.imageUrl);
       _currentUrlIndex = 0;
       _hasError = false;
       _loadImage();
@@ -74,6 +66,15 @@ class _ProductImageState extends State<ProductImage> {
   }
 
   void _tryNextUrl() {
+    // En web, los errores de CORS son definitivos (no podemos trabajarlos alrededor)
+    // por lo que marcamos como error después del primer intento
+    if (kIsWeb && _currentUrlIndex > 0) {
+      setState(() {
+        _hasError = true;
+      });
+      return;
+    }
+    
     if (_currentUrlIndex < _imageUrls.length - 1) {
       setState(() {
         _currentUrlIndex++;
@@ -98,9 +99,6 @@ class _ProductImageState extends State<ProductImage> {
       fit: widget.fit,
       loadingBuilder: (context, child, loadingProgress) {
         if (loadingProgress == null) {
-          setState(() {
-            _hasError = false;
-          });
           return child;
         }
         
@@ -242,13 +240,11 @@ class _ProductImageState extends State<ProductImage> {
 /// Widget optimizado específicamente para tarjetas de producto
 class ProductCardImage extends StatelessWidget {
   final String imageUrl;
-  final String? serverIP;
   final VoidCallback? onTap;
 
   const ProductCardImage({
     super.key,
     required this.imageUrl,
-    this.serverIP,
     this.onTap,
   });
 
@@ -256,7 +252,6 @@ class ProductCardImage extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget image = ProductImage(
       imageUrl: imageUrl,
-      serverIP: serverIP,
       fit: BoxFit.cover,
       borderRadius: const BorderRadius.vertical(
         top: Radius.circular(16),
@@ -277,13 +272,11 @@ class ProductCardImage extends StatelessWidget {
 /// Widget optimizado para vista de detalles de producto
 class ProductDetailImage extends StatelessWidget {
   final String imageUrl;
-  final String? serverIP;
   final VoidCallback? onTap;
 
   const ProductDetailImage({
     super.key,
     required this.imageUrl,
-    this.serverIP,
     this.onTap,
   });
 
@@ -304,7 +297,6 @@ class ProductDetailImage extends StatelessWidget {
       ),
       child: ProductImage(
         imageUrl: imageUrl,
-        serverIP: serverIP,
         fit: BoxFit.cover,
         borderRadius: BorderRadius.circular(16),
       ),

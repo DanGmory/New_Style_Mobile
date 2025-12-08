@@ -48,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       try {
         //  El servicio devuelve un ApiUser si todo está bien
-        final ApiUser user = await _loginService.loginUser(
+        final ApiUser user = await _loginService.login(
           _usernameController.text.trim(),
           _passwordController.text.trim(),
         );

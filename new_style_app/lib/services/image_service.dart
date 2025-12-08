@@ -8,8 +8,8 @@ class ImageService {
   static const String defaultImagePath = '/assets/img/products/';
   static const String fallbackImageUrl = 'https://via.placeholder.com/400x400/E5E7EB/6B7280?text=Producto';
   
-  /// Construir URL de imagen completa con múltiples fallbacks
-  static String buildImageUrl(String imageUrl, {String? serverIP}) {
+  /// Construir URL de imagen completa usando el host base configurado
+  static String buildImageUrl(String imageUrl) {
     if (imageUrl.isEmpty) {
       return fallbackImageUrl;
     }
@@ -19,37 +19,25 @@ class ImageService {
       return imageUrl;
     }
     
-    // Determinar IP del servidor
-    // Preferir la configuración centralizada del host en ApiConfig
-    final configuredHost = ApiConfig.host.replaceFirst(RegExp(r'^https?://'), '');
-    final ip = serverIP ?? configuredHost.split(':').first;
-    final baseUrl = 'http://$ip:3000';
+    // Usar el host configurado en ApiConfig
+    final baseUrl = ApiConfig.host;
     
     // Si la imagen empieza con '/', agregarla directamente
     if (imageUrl.startsWith('/')) {
-      return '$baseUrl$imageUrl';
+      final encoded = Uri.encodeFull(imageUrl);
+      return '$baseUrl$encoded';
     }
     
-    // Construir diferentes rutas posibles
+    // Construir ruta estándar de assets de imagen
     final encoded = Uri.encodeFull(imageUrl);
-    final possiblePaths = [
-      '$baseUrl/assets/img/$encoded',
-      '$baseUrl/assets/img/products/$encoded',
-      '$baseUrl/public/img/$encoded',
-      '$baseUrl/public/assets/img/$encoded',
-      '$baseUrl/uploads/$encoded',
-      '$baseUrl/static/img/$encoded',
-    ];
+    final finalUrl = '$baseUrl/assets/img/$encoded';
     
-    // En desarrollo, mostrar las rutas que estamos intentando
     if (kDebugMode) {
-      debugPrint('🖼️ Construyendo URL para imagen: $imageUrl');
-      debugPrint('🌐 IP del servidor: $ip');
-      debugPrint('📍 URL principal: ${possiblePaths.first}');
+      debugPrint('🖼️ URL de imagen: $finalUrl');
     }
     
-    // Retornar la primera URL construida (puedes implementar lógica de prueba aquí)
-    return possiblePaths.first;
+    // Retornar la URL construida
+    return finalUrl;
   }
   
   /// Verificar si una URL de imagen es válida
@@ -77,19 +65,15 @@ class ImageService {
     }
   }
   
-  /// Obtener lista de URLs alternativas para una imagen
-  static List<String> getAlternativeImageUrls(String imageUrl, {String? serverIP}) {
+  /// Obtener lista de URLs alternativas para una imagen (solo URL principal)
+  static List<String> getAlternativeImageUrls(String imageUrl) {
     if (imageUrl.isEmpty) {
       return [fallbackImageUrl];
     }
 
-    final configuredHost = ApiConfig.host.replaceFirst(RegExp(r'^https?://'), '');
-    final ip = serverIP ?? configuredHost.split(':').first;
-    final baseUrl = 'http://$ip:3000';
-
     final alternatives = <String>[];
 
-    // Si la ruta es un asset local, devolverlo como tal (handled by widgets)
+    // Si la ruta es un asset local, devolverlo como tal
     if (imageUrl.startsWith('assets/')) {
       return [imageUrl, fallbackImageUrl];
     }
@@ -97,28 +81,18 @@ class ImageService {
     // Si ya es una URL completa, agregarla primera
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       alternatives.add(imageUrl);
+      alternatives.add(fallbackImageUrl);
+      return alternatives;
     }
 
-    // Generar múltiples rutas posibles codificando espacios y caracteres
-    final paths = [
-      '/assets/img/',
-      '/assets/img/products/',
-      '/public/img/',
-      '/public/assets/img/',
-      '/uploads/',
-      '/static/img/',
-      '/images/',
-      '/img/',
-    ];
-
+    // Construir URL usando el host configurado
     final encoded = Uri.encodeFull(imageUrl);
-
-    for (String path in paths) {
-      if (imageUrl.startsWith('/')) {
-        alternatives.add('$baseUrl${Uri.encodeFull(imageUrl)}');
-      } else {
-        alternatives.add('$baseUrl$path$encoded');
-      }
+    final baseUrl = ApiConfig.host;
+    
+    if (imageUrl.startsWith('/')) {
+      alternatives.add('$baseUrl$encoded');
+    } else {
+      alternatives.add('$baseUrl/assets/img/$encoded');
     }
 
     // Agregar imagen de fallback al final
@@ -128,8 +102,8 @@ class ImageService {
   }
   
   /// Probar múltiples URLs y devolver la primera que funcione
-  static Future<String> findWorkingImageUrl(String originalUrl, {String? serverIP}) async {
-    final alternatives = getAlternativeImageUrls(originalUrl, serverIP: serverIP);
+  static Future<String> findWorkingImageUrl(String originalUrl) async {
+    final alternatives = getAlternativeImageUrls(originalUrl);
     
     for (String url in alternatives) {
       if (await isImageUrlValid(url)) {

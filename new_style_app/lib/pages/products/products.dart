@@ -4,6 +4,7 @@ import '../../services/cart_service.dart';
 import '../../services/image_service.dart';
 import '../../widgets/product_image.dart';
 import '../../models/products_model.dart';
+import 'product_detail.dart';
 
 // Enum para estados de carga más claros
 enum ProductLoadingState { loading, loaded, error, empty, retrying }
@@ -194,10 +195,9 @@ class _ProductScreenState extends State<ProductScreen> {
     return '0';
   }
 
-  /// Construir URL de imagen con IP dinámica usando ImageService
+  /// Construir URL de imagen usando ImageService con host configurado
   String _buildImageUrl(String imageUrl) {
-    final currentIP = _productService.getCurrentIP();
-    return ImageService.buildImageUrl(imageUrl, serverIP: currentIP);
+    return ImageService.buildImageUrl(imageUrl);
   }
 
   /// Método mejorado para agregar al carrito con mejor UX
@@ -343,8 +343,7 @@ class _ProductScreenState extends State<ProductScreen> {
   Future<List<Product>> _loadProductsWithFallback() async {
     final strategies = [
       () => _productService.getProducts(),
-      () => _productService.getProductsAlternative(),
-      // () => _alternativeService.getProducts(), // Si implementas el servicio alternativo
+      // Los reintentos se manejan automáticamente por HttpService (15s timeouts + interceptores)
     ];
 
     Exception? lastException;
@@ -456,10 +455,7 @@ class _ProductScreenState extends State<ProductScreen> {
       for (var product in productsToTest) {
         final originalUrl = product.imageUrl;
         final builtUrl = _buildImageUrl(product.imageUrl);
-        final alternatives = ImageService.getAlternativeImageUrls(
-          product.imageUrl, 
-          serverIP: _productService.getCurrentIP()
-        );
+        final alternatives = ImageService.getAlternativeImageUrls(product.imageUrl);
         
         imageResults['${product.name} (Original)'] = originalUrl.isEmpty ? 'URL vacía' : originalUrl;
         imageResults['${product.name} (Construida)'] = builtUrl.isEmpty ? 'URL vacía' : builtUrl;
@@ -504,9 +500,9 @@ class _ProductScreenState extends State<ProductScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'IP actual del servicio: ${_productService.getCurrentIP() ?? 'No detectada'}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                const Text(
+                  'Servidor: 192.168.1.14:3000',
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
                 ...results.entries.map((entry) {
@@ -606,12 +602,12 @@ class _ProductScreenState extends State<ProductScreen> {
       results['Servidor Principal'] = '❌ ${e.toString().substring(0, 50)}...';
     }
 
-    // Probar método alternativo
+    // Verificar estado del caché
     try {
-      await _productService.getProductsAlternative();
-      results['Método Alternativo'] = '✅ Funcionando';
+      final cacheSize = _productService.getProductsCacheSize();
+      results['Caché'] = '✅ ${cacheSize}KB disponibles';
     } catch (e) {
-      results['Método Alternativo'] = '❌ ${e.toString().substring(0, 50)}...';
+      results['Caché'] = '❓ Estado desconocido';
     }
 
     results['Estado Actual'] = _currentState.state.toString();
@@ -690,155 +686,10 @@ class _ProductScreenState extends State<ProductScreen> {
 
   /// Modal de detalles del producto mejorado
   void _showProductDetails(Product product) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        maxChildSize: 0.9,
-        minChildSize: 0.5,
-        builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              // Handle indicator
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                height: 4,
-                width: 40,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Imagen del producto
-                      ProductDetailImage(
-                        imageUrl: product.imageUrl,
-                        serverIP: _productService.getCurrentIP(),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Nombre del producto
-                      Text(
-                        product.name,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // Categoría
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade100,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          product.category,
-                          style: TextStyle(
-                            color: Colors.blue.shade800,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Precio
-                      Row(
-                        children: [
-                          const Text(
-                            'Precio: ',
-                            style: TextStyle(fontSize: 18),
-                          ),
-                          Text(
-                            '\$${_formatPrice(product.price)}',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Cantidad disponible
-                      Row(
-                        children: [
-                          const Icon(Icons.inventory_2, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Disponible: ${_formatAmount(product.amount)}',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Descripción
-                      const Text(
-                        'Descripción',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        product.description,
-                        style: const TextStyle(fontSize: 16, height: 1.5),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Botón agregar al carrito
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            _addToCart(product);
-                          },
-                          icon: const Icon(Icons.shopping_cart_outlined),
-                          label: const Text('Agregar al Carrito'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductDetailScreen(product: product),
       ),
     );
   }
@@ -1419,7 +1270,6 @@ class _ProductScreenState extends State<ProductScreen> {
                   children: [
                     ProductCardImage(
                       imageUrl: product.imageUrl,
-                      serverIP: _productService.getCurrentIP(),
                       onTap: () => _showProductDetails(product),
                     ),
                     // Botón de agregar al carrito flotante

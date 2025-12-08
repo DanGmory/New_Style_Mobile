@@ -1,8 +1,6 @@
-/// Configuración centralizada de URLs y endpoints de la API
-/// Sincronizada con las rutas del backend JavaScript
 class ApiConfig {
   // Host base
-  static const String host = "http://192.168.1.14:3000";
+  static const String host = "http://192.168.1.15:3000";
   
   // ===== ENDPOINTS DE LA API =====
   // Rutas principales del API (coinciden exactamente con el JavaScript)
@@ -135,79 +133,8 @@ class ApiConfig {
   static String get generalViewCamisasEndpoint => "$host$urlGeneralViewCamisas";
   static String get generalViewPantalonesEndpoint => "$host$urlGeneralViewPantalones";
   
-  // Método para obtener URL completa con IP dinámica
-  static String getBaseUrlWithIP(String? dynamicIP) {
-    if (dynamicIP != null && dynamicIP.isNotEmpty) {
-      return "http://$dynamicIP:3000";
-    }
-    return host;
-  }
-  
-  // Método para obtener endpoint completo con IP dinámica
-  static String getEndpointWithIP(String? dynamicIP, String endpoint) {
-    final baseUrl = getBaseUrlWithIP(dynamicIP);
-    return "$baseUrl$endpoint";
-  }
-  
-  // Lista de todas las IPs comunes para fallback
-  static const List<String> fallbackIps = [
-    "192.168.1.14",   // Tu IP específica (PRIORIDAD MÁXIMA)
-    "192.168.1.100",
-    "192.168.1.101", 
-    "192.168.1.102",
-    "192.168.1.69",
-    "192.168.0.100",
-    "192.168.0.101",
-    "10.0.0.1",
-    "10.0.0.2",
-    "10.0.2.2", // Android emulator
-    "172.16.0.1",
-    "127.0.0.1",
-  ];
-  
-  // Obtener todas las URLs posibles para un endpoint
-  static List<String> getAllPossibleUrls(String endpoint, {String? detectedIP}) {
-    final urls = <String>[];
-    
-    // Agregar localhost como primera opción
-    urls.add("$host$endpoint");
-    
-    // Agregar IP detectada si existe
-    if (detectedIP != null && detectedIP.isNotEmpty) {
-      urls.add("http://$detectedIP:3000$endpoint");
-    }
-    
-    // Agregar IPs de fallback
-    for (String ip in fallbackIps) {
-      if (ip != detectedIP) { // Evitar duplicados
-        urls.add("http://$ip:3000$endpoint");
-      }
-    }
-    
-    return urls;
-  }
-  
-  // Obtener todas las URLs base posibles (sin endpoint específico)
-  static List<String> getAllPossibleBaseUrls({String? detectedIP}) {
-    final urls = <String>[];
-    
-    // Base URL principal
-    urls.add("$host/api_v1");
-    
-    // IP detectada
-    if (detectedIP != null && detectedIP.isNotEmpty) {
-      urls.add("http://$detectedIP:3000/api_v1");
-    }
-    
-    // IPs de fallback
-    for (String ip in fallbackIps) {
-      if (ip != detectedIP) {
-        urls.add("http://$ip:3000/api_v1");
-      }
-    }
-    
-    return urls;
-  }
+  // Obtener URL base (retorna el host configurado)
+  static String getBaseUrl() => host;
   
   // ===== MÉTODOS AUXILIARES =====
   
