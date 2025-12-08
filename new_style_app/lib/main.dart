@@ -5,15 +5,19 @@ import 'pages/splash/splash.dart';
 import 'pages/home/home.dart';
 import 'theme/theme_app.dart';
 import 'services/theme_service.dart';
+import 'services/cache_service.dart';
 import 'models/register_model.dart';
 import 'services/logger_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Inicializar el servicio de tema
+  // Inicializar servicios
   final themeService = ThemeService();
+  final cacheService = CacheService();
+  
   await themeService.initialize();
+  await cacheService.initialize();
   
   runApp(MyApp(themeService: themeService));
 }
