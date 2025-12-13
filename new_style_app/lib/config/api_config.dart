@@ -1,6 +1,6 @@
 class ApiConfig {
   // Host base
-  static const String host = "http://192.168.1.15:3000";
+  static const String host = "http://192.168.1.14:3000";
   
   // ===== ENDPOINTS DE LA API =====
   // Rutas principales del API (coinciden exactamente con el JavaScript)
