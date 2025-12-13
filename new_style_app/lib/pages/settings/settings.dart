@@ -75,29 +75,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             
             const SizedBox(height: 16),
             
-            // Sección de Notificaciones
-            _buildSectionCard(
-              context,
-              'Notificaciones',
-              Icons.notifications_outlined,
-              [
-                _buildDevelopmentTile(
-                  context,
-                  'Notificaciones Push',
-                  'Recibe alertas de nuevos productos y ofertas',
-                  Icons.notifications_active_outlined,
-                ),
-                _buildDevelopmentTile(
-                  context,
-                  'Notificaciones por Email',
-                  'Recibe noticias y promociones por correo',
-                  Icons.email_outlined,
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 16),
-            
             // Sección de Cuenta
             _buildSectionCard(
               context,
@@ -106,44 +83,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               [
                 _buildDevelopmentTile(
                   context,
-                  'Información Personal',
-                  'Edita tu perfil y datos personales',
-                  Icons.edit_outlined,
-                ),
-                _buildDevelopmentTile(
-                  context,
                   'Cambiar Contraseña',
                   'Actualiza tu contraseña de acceso',
                   Icons.lock_outline,
-                ),
-                _buildDevelopmentTile(
-                  context,
-                  'Direcciones de Envío',
-                  'Gestiona tus direcciones guardadas',
-                  Icons.location_on_outlined,
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Sección de Privacidad
-            _buildSectionCard(
-              context,
-              'Privacidad y Seguridad',
-              Icons.security_outlined,
-              [
-                _buildDevelopmentTile(
-                  context,
-                  'Política de Privacidad',
-                  'Lee nuestra política de privacidad',
-                  Icons.privacy_tip_outlined,
-                ),
-                _buildDevelopmentTile(
-                  context,
-                  'Términos y Condiciones',
-                  'Consulta los términos de uso',
-                  Icons.description_outlined,
                 ),
               ],
             ),
@@ -175,43 +117,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Icons.bug_report_outlined,
                 ),
               ],
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Información de la App
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.cardColor.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: theme.dividerColor.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'New Style App',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Versión 1.0.0',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '© 2025 New Style Mobile',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ],
-              ),
             ),
             
             const SizedBox(height: 32),
